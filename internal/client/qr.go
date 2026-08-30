@@ -1,7 +1,6 @@
 package client
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 
@@ -10,27 +9,16 @@ import (
 	"deepseek-terminal/internal/protocol"
 )
 
-// pairingPayloadJSON renders the JSON payload that is encoded into the QR
-// code. It never contains an API key.
-func pairingPayloadJSON(s protocol.SessionCreateResponse) (string, error) {
-	b, err := json.Marshal(protocol.PairingPayload{
-		Version:      1,
-		SessionID:    s.SessionID,
-		PairingToken: s.PairingToken,
-		GatewayURL:   s.GatewayURL,
-	})
-	if err != nil {
-		return "", err
-	}
-	return string(b), nil
+// pairingPayloadString builds the QR payload for a session: a minimal URI
+// carrying only the short-lived 6-digit pairing code. It deliberately does not
+// include the gateway URL, session id, pairing token or any secret.
+func pairingPayloadString(s protocol.SessionCreateResponse) string {
+	return "dsremote://pair?v=1&code=" + protocol.NormalizePairCode(s.PairingCode)
 }
 
 // renderQR writes an ASCII QR code for the pairing payload to w.
 func renderQR(w io.Writer, s protocol.SessionCreateResponse) error {
-	payload, err := pairingPayloadJSON(s)
-	if err != nil {
-		return err
-	}
+	payload := pairingPayloadString(s)
 	qr, err := qrcode.New(payload, qrcode.Low)
 	if err != nil {
 		return fmt.Errorf("qr: %w", err)

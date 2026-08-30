@@ -1,15 +1,15 @@
-# DS Remote — iOS Controller (Phase 3.1)
+# DS Remote — iOS Controller (Phase 3.2)
 
 Native SwiftUI-контроллер для подтверждения/завершения terminal-сессий
-DeepSeek через 6-digit pairing code. Фаза 3.1: **ручной ввод кода**, QR-скан
-намеренно не реализован (Phase 3.2).
+DeepSeek. Pairing: **QR-скан** (основной) + **ручной ввод 6-digit code**
+(fallback). QR-скан реализован на системном AVFoundation.
 
 ## Requirements
 
 - macOS с Xcode 16+ (проверено на Xcode 26.4, Swift 6.3)
 - iOS Deployment Target: **17.0**
 - Никаких third-party зависимостей (чистые SwiftUI/Foundation/URLSession/
-  LocalAuthentication/Security)
+  LocalAuthentication/Security/AVFoundation)
 
 ## Структура
 
@@ -21,11 +21,13 @@ ios/
   DSRemote/
     App/DSRemoteApp.swift
     Models/ControlSession.swift, AppError.swift
-    Networking/GatewayClient.swift, GatewayURLValidator.swift, PairingCode.swift
+    Networking/GatewayClient.swift, GatewayURLValidator.swift, PairingCode.swift,
+             QRPairingParser.swift
     Security/BiometricAuthenticator.swift, KeychainStore.swift
     ViewModels/AppViewModel.swift
-    Views/ContentView.swift, GatewaySetupView.swift, PairingView.swift, ActiveSessionView.swift
-  DSRemoteTests/           # unit tests (16 кейсов)
+    Views/ContentView.swift, GatewaySetupView.swift, PairingView.swift,
+         ActiveSessionView.swift, QRScannerView.swift, QRScannerScreen.swift
+  DSRemoteTests/           # unit tests (36 кейсов)
 ```
 
 ## Как открыть и собрать
@@ -85,7 +87,7 @@ DeepSeek API Key
 > передаётся: gateway работает с `-mock`, а session-scoped доставка key —
 > Phase 3.3.
 
-## Manual pairing flow
+## Manual pairing flow (fallback)
 
 1. На Mac: `./bin/dsgateway -mock -listen 0.0.0.0:8080`.
 2. В терминале (Mac/Windows): `./bin/ds --remote http://<MAC_IP>:8080` →
@@ -102,16 +104,88 @@ DeepSeek API Key
    уничтожения сессии недействителен. Если app убит — capability теряется
    (допустимо для MVP; gateway сам уничтожит сессию по idle/exit).
 
-## Известные ограничения (Phase 3.1)
+## QR pairing flow
 
-- Нет QR-скана (Phase 3.2), нет chat UI на iPhone, нет push/background.
-- Нет session-scoped DeepSeek key delivery (Phase 3.3) — approve работает
-  с mock-провайдером.
+Основной способ pairing: `Scan QR` → камера → Face ID → approve.
+
+1. На экране Pairing нажать **Scan QR** (кнопка `qrcode.viewfinder`).
+2. Разрешить доступ к камере (системный диалог; `NSCameraUsageDescription`
+   в Info.plist).
+3. Навести камеру на QR в терминале.
+4. При успешном распознавании валидного payload: scanner останавливается,
+   запускается Face ID, затем существующий approve flow.
+5. Успех → `ACTIVE SESSION`. Терминал: `✓ Approved`.
+
+### Payload format
+
+QR-код, генерируемый gateway, содержит минимальный URI:
+
+```
+dsremote://pair?v=1&code=472913
+```
+
+- Никаких secrets: нет API key, control_token, session id, gateway URL.
+- Парсинг строгий: чужие QR (`https://...`, другие scheme/host, не-6-значный
+  code, неизвестная версия, лишние параметры) отклоняются с
+  `Not a DS Remote pairing QR`, без открытия содержимого и без approval.
+- Gateway URL приложение берёт из настроек (Phase 3.1), в QR его нет.
+
+### Duplicate frames
+
+После первого валидного QR сканер блокируется (`didCaptureValidQR`),
+плюс AppViewModel дополнительно не повторяет одинаковый raw payload —
+даже если камера видит один QR много кадров, Face ID/approve происходят
+один раз.
+
+### Biometric cancellation
+
+Отмена Face ID после скана → approve не отправляется, сессия остаётся
+`WAITING`, приложение возвращается на pairing screen. Повторный `Scan QR`
+с тем же QR разрешён (`prepareForScan` сбрасывает guard).
+
+### Invalid / expired / camera states
+
+- Чужой QR → feedback `Not a DS Remote pairing QR`, сканер продолжает работать.
+- Pairing expired → существующая серверная ошибка отображается как
+  `Pairing expired`; активной сессии нет.
+- Camera denied → `Camera access is disabled.` + **Open Settings**; ручной
+  ввод кода остаётся доступен.
+- Камера недоступна (например simulator) → `Camera unavailable on this
+  device.`; ручной ввод кода остаётся доступен.
+
+## Camera permission
+
+- `NSCameraUsageDescription`: *"DS Remote uses the camera to scan temporary
+  terminal pairing QR codes."*
+- Не запрашиваются: микрофон, фото, контакты, геолокация (в Info.plist нет
+  соответствующих ключей).
+- Обрабатываются `.authorized`, `.notDetermined`, `.denied`, `.restricted`.
+
+## Известные ограничения (Phase 3.2)
+
+- Нет chat UI на iPhone, нет push/background, нет session-scoped DeepSeek key
+  delivery (Phase 3.3) — approve работает с mock-провайдером.
 - Терминал не получает активного уведомления об End Session (нет push):
   он видит завершение при следующем prompt (`not_found`).
 - Для запуска на физическом iPhone нужно выбрать Team в Xcode (Signing &
   Capabilities); для симулятора подпись не требуется.
 - Один контролируемый сессии одновременно (multisession — вне scope).
+- Simulator: физического сканирования камерой нет (только Mac-камера при
+  наличии); результат сканирования подтверждается только на реальном iPhone.
+
+## Physical iPhone test procedure
+
+1. `make build`, получить LAN IP: `ipconfig getifaddr en0`.
+2. Mac: `./bin/dsgateway -mock -listen 0.0.0.0:8080`.
+3. Terminal: `./bin/ds --remote http://<MAC_IP>:8080`.
+4. iPhone: DS Remote → Gateway URL = `http://<MAC_IP>:8080` → **Scan QR** →
+   выдать camera permission → навести на QR.
+5. Ожидание: `QR recognized → Face ID → ACTIVE SESSION`; терминал: `✓ Approved`.
+6. `You > hello world` → `mock reply to: hello world`.
+7. **End Session** → сессия уничтожена.
+
+Негативные тесты: чужой QR (никакого Face ID), Face ID cancel (нет approve),
+QR после expiry (серверная ошибка), camera denied (fallback на код).
 
 ## Deployment target
 

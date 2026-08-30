@@ -11,6 +11,7 @@ enum AppError: Error, LocalizedError, Equatable {
     case endSessionFailed
     case biometricCancelled
     case biometricFailed
+    case notDSRemoteQR
     case server(code: String, message: String)
 
     var errorDescription: String? {
@@ -33,6 +34,8 @@ enum AppError: Error, LocalizedError, Equatable {
             return "Biometric authentication cancelled"
         case .biometricFailed:
             return "Biometric authentication failed"
+        case .notDSRemoteQR:
+            return "Not a DS Remote pairing QR"
         case .server(_, let message):
             return message
         }

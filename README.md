@@ -134,14 +134,14 @@ Session destroyed.
 
 1. **Mac**: `./bin/dsgateway -mock -listen 0.0.0.0:8080`
 2. **Terminal**: `./bin/ds --remote http://<MAC_IP>:8080` → `Code: XXX XXX`
-3. **iPhone**: DS Remote → указать `http://<MAC_IP>:8080` → ввести код →
-   **Approve** → Face ID
+3. **iPhone**: DS Remote → указать `http://<MAC_IP>:8080` → **сканировать QR**
+   в терминале (или ввести код вручную) → **Approve** → Face ID
 4. **Terminal**: `✓ Approved` → чат (mock)
 5. **iPhone**: **End Session** → сессия уничтожается (`DELETE /v1/sessions/{id}`
    c `Authorization: Bearer <control_token>`)
 6. **Terminal** при следующем prompt: `Error: not_found: session not found`
 
-Детали: `ios/README.md`. QR-скан в этой фазе не реализован.
+Детали: `ios/README.md`. Ручной ввод 6-значного кода остаётся fallback'ом.
 
 ## Переменные окружения
 

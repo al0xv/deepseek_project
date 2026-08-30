@@ -139,4 +139,72 @@ final class AppViewModelTests: XCTestCase {
         viewModel.saveAPIKey()
         XCTAssertEqual(fakeKeychain.stored, "sk-test-fake")
     }
+
+    // MARK: - QR flow
+
+    private let validQR = "dsremote://pair?v=1&code=472913"
+
+    func testValidQRTriggersBiometricsAndApproves() async {
+        fakeClient.approveResult = .success(sampleSession)
+        await viewModel.handleScannedQR(validQR)
+        XCTAssertEqual(fakeBiometrics.authenticateCount, 1)
+        XCTAssertEqual(fakeClient.approveCount, 1)
+        XCTAssertEqual(viewModel.phase, .active(sampleSession))
+    }
+
+    func testQRBiometricFailureDoesNotApprove() async {
+        fakeBiometrics.result = .failure(AppError.biometricFailed)
+        await viewModel.handleScannedQR(validQR)
+        XCTAssertEqual(fakeBiometrics.authenticateCount, 1)
+        XCTAssertEqual(fakeClient.approveCount, 0)
+    }
+
+    func testQRBiometricCancelDoesNotApprove() async {
+        fakeBiometrics.result = .failure(AppError.biometricCancelled)
+        await viewModel.handleScannedQR(validQR)
+        XCTAssertEqual(fakeClient.approveCount, 0)
+        XCTAssertEqual(viewModel.errorMessage, AppError.biometricCancelled.errorDescription)
+        guard case .active = viewModel.phase else { return }
+        XCTFail("no active session expected")
+    }
+
+    func testDuplicateQRApprovesAtMostOnce() async {
+        fakeClient.approveResult = .success(sampleSession)
+        await viewModel.handleScannedQR(validQR)
+        await viewModel.handleScannedQR(validQR)
+        XCTAssertEqual(fakeClient.approveCount, 1)
+        XCTAssertEqual(fakeBiometrics.authenticateCount, 1)
+    }
+
+    func testInvalidQRDoesNotTriggerBiometricsOrNetwork() async {
+        await viewModel.handleScannedQR("https://google.com")
+        XCTAssertEqual(fakeBiometrics.authenticateCount, 0)
+        XCTAssertEqual(fakeClient.approveCount, 0)
+        XCTAssertEqual(viewModel.errorMessage, AppError.notDSRemoteQR.errorDescription)
+        guard case .active = viewModel.phase else { return }
+        XCTFail("no active session expected")
+    }
+
+    func testQRExpiredPairingLeavesNoActiveSession() async {
+        fakeClient.approveResult = .failure(AppError.pairingExpired)
+        await viewModel.handleScannedQR(validQR)
+        XCTAssertEqual(viewModel.errorMessage, AppError.pairingExpired.errorDescription)
+        guard case .active = viewModel.phase else { return }
+        XCTFail("no active session expected")
+    }
+
+    func testRescanSameQRAfterBiometricCancelIsAllowed() async {
+        // First scan: biometric cancelled -> no approve.
+        fakeBiometrics.result = .failure(AppError.biometricCancelled)
+        await viewModel.handleScannedQR(validQR)
+        XCTAssertEqual(fakeClient.approveCount, 0)
+
+        // User reopens the scanner (prepareForScan) and scans the same QR.
+        fakeBiometrics.result = .success(())
+        fakeClient.approveResult = .success(sampleSession)
+        viewModel.prepareForScan()
+        await viewModel.handleScannedQR(validQR)
+        XCTAssertEqual(fakeClient.approveCount, 1)
+        XCTAssertEqual(viewModel.phase, .active(sampleSession))
+    }
 }

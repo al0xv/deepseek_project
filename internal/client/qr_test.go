@@ -7,23 +7,26 @@ import (
 	"deepseek-terminal/internal/protocol"
 )
 
-func TestPairingPayloadJSON(t *testing.T) {
+// TestPairingPayloadString pins the exact semantic payload placed in the QR
+// code before rendering. The payload is a minimal URI with only the
+// short-lived 6-digit pairing code.
+func TestPairingPayloadString(t *testing.T) {
 	s := protocol.SessionCreateResponse{
 		SessionID:    "sess1",
 		PairingToken: "tok1",
+		PairingCode:  "472 913",
 		GatewayURL:   "http://localhost:8080",
+		ExpiresIn:    120,
 	}
-	payload, err := pairingPayloadJSON(s)
-	if err != nil {
-		t.Fatal(err)
+	got := pairingPayloadString(s)
+	want := "dsremote://pair?v=1&code=472913"
+	if got != want {
+		t.Fatalf("payload = %q, want %q", got, want)
 	}
-	for _, want := range []string{`"session_id":"sess1"`, `"pairing_token":"tok1"`, `"gateway_url":"http://localhost:8080"`, `"v":1`} {
-		if !strings.Contains(payload, want) {
-			t.Errorf("payload missing %q: %s", want, payload)
+	for _, forbidden := range []string{"sess1", "tok1", "localhost", "session_id", "pairing_token", "gateway_url", "api", "key"} {
+		if strings.Contains(got, forbidden) {
+			t.Errorf("payload must not contain %q: %s", forbidden, got)
 		}
-	}
-	if strings.Contains(payload, "api") || strings.Contains(payload, "key") {
-		t.Errorf("payload must not contain key material: %s", payload)
 	}
 }
 
@@ -31,6 +34,7 @@ func TestRenderQRProducesBlockArt(t *testing.T) {
 	s := protocol.SessionCreateResponse{
 		SessionID:    "sess1",
 		PairingToken: "tok1",
+		PairingCode:  "472913",
 		GatewayURL:   "http://localhost:8080",
 	}
 	var sb strings.Builder

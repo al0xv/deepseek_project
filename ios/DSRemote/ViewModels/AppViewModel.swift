@@ -13,11 +13,14 @@ final class AppViewModel: ObservableObject {
     @Published var pairingCode: String = ""
     @Published var apiKey: String = ""
     @Published var errorMessage: String?
+    @Published var isApproving = false
 
     private let client: GatewayClientProtocol
     private let biometrics: BiometricAuthenticating
     private let keychain: KeychainStoring
     private let defaults: UserDefaults
+    /// Guards against re-approving the same scanned QR (duplicate frames).
+    private var lastQRProcessed: String?
 
     init(client: GatewayClientProtocol = GatewayClient(),
          biometrics: BiometricAuthenticating = BiometricAuthenticator(),
@@ -35,6 +38,13 @@ final class AppViewModel: ObservableObject {
 
     var gatewayURL: URL? {
         GatewayURLValidator.parse(gatewayURLString)
+    }
+
+    /// Called before opening the scanner: clears the duplicate-QR guard so a
+    /// cancelled approval can be retried by re-scanning the same QR.
+    func prepareForScan() {
+        lastQRProcessed = nil
+        errorMessage = nil
     }
 
     // MARK: - Gateway configuration
@@ -73,7 +83,24 @@ final class AppViewModel: ObservableObject {
 
     // MARK: - Pairing approval
 
+    /// Handles a QR payload delivered by the scanner. Parsing is strict: an
+    /// unrelated QR never reaches biometrics or the network.
+    func handleScannedQR(_ rawValue: String) async {
+        guard rawValue != lastQRProcessed else { return }
+        lastQRProcessed = rawValue
+        do {
+            let payload = try QRPairingParser.parse(rawValue)
+            pairingCode = payload.pairingCode
+            await approve()
+        } catch {
+            errorMessage = Self.message(for: error)
+        }
+    }
+
     func approve() async {
+        guard !isApproving else { return }
+        isApproving = true
+        defer { isApproving = false }
         guard gatewayURL != nil else {
             errorMessage = AppError.invalidGatewayURL.errorDescription
             return

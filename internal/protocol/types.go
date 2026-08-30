@@ -95,14 +95,6 @@ type ApproveResponse struct {
 	ControlToken string       `json:"control_token,omitempty"`
 }
 
-// PairingPayload is what the QR code encodes. It never contains an API key.
-type PairingPayload struct {
-	Version      int    `json:"v"`
-	SessionID    string `json:"session_id"`
-	PairingToken string `json:"pairing_token"`
-	GatewayURL   string `json:"gateway_url"`
-}
-
 // NormalizePairCode strips everything except digits: "472 913" -> "472913".
 func NormalizePairCode(s string) string {
 	out := make([]byte, 0, len(s))
