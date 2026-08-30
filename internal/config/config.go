@@ -35,13 +35,25 @@ func GatewayURL() string {
 	return "http://localhost:8080"
 }
 
-// GatewayAddr returns the listen address from DS_GATEWAY_ADDR,
-// default ":8080".
+// GatewayAddr returns the listen address from DS_GATEWAY_ADDR.
+// The safe default binds only the loopback interface; use -listen (see
+// ListenAddr) to expose the gateway on the LAN for cross-device tests.
 func GatewayAddr() string {
 	if a := os.Getenv("DS_GATEWAY_ADDR"); a != "" {
 		return a
 	}
-	return ":8080"
+	return "127.0.0.1:8080"
+}
+
+// ListenAddr resolves the final listen address. Precedence:
+//  1. explicit CLI flag (e.g. "-listen 0.0.0.0:8080"),
+//  2. DS_GATEWAY_ADDR environment variable,
+//  3. loopback-only default "127.0.0.1:8080".
+func ListenAddr(flagValue string) string {
+	if flagValue != "" {
+		return flagValue
+	}
+	return GatewayAddr()
 }
 
 // Duration returns the parsed duration for key, or def when the variable is

@@ -3,10 +3,12 @@ package client
 import (
 	"context"
 	"encoding/json"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"deepseek-terminal/internal/protocol"
 )
@@ -124,3 +126,58 @@ func writeTestError(w http.ResponseWriter, status int, code, msg string) {
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(protocol.ErrorBody{Code: code, Message: msg})
 }
+
+func TestGatewayClientWithHostname(t *testing.T) {
+	srv := fakeServer(t)
+	defer srv.Close()
+
+	// "localhost" is a hostname, not a raw IP; both resolve to loopback.
+	hostURL := strings.Replace(srv.URL, "127.0.0.1", "localhost", 1)
+	gc := NewGatewayClient(hostURL)
+	sess, err := gc.CreateSession()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sess.SessionID != "sess123" {
+		t.Fatalf("session id = %q", sess.SessionID)
+	}
+}
+
+func TestGatewayClientLANIPv4URL(t *testing.T) {
+	// The exact URL shape used in the Real Windows LAN test.
+	gc := NewGatewayClient("http://192.168.1.42:8080/")
+	if gc.BaseURL != "http://192.168.1.42:8080" {
+		t.Fatalf("BaseURL = %q, want trailing slash trimmed", gc.BaseURL)
+	}
+	req, err := http.NewRequest(http.MethodGet, gc.BaseURL+"/v1/sessions/x", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if req.URL.Host != "192.168.1.42:8080" {
+		t.Fatalf("request host = %q, want LAN IP host", req.URL.Host)
+	}
+}
+
+func TestGatewayClientUnreachableFailsFast(t *testing.T) {
+	// Bind a listener, get its port, then close it so the address is refused.
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	addr := ln.Addr().String()
+	ln.Close()
+
+	gc := NewGatewayClient("http://" + addr)
+	start := time.Now()
+	_, err = gc.CreateSession()
+	if err == nil {
+		t.Fatal("expected error for unreachable gateway")
+	}
+	if elapsed := time.Since(start); elapsed > 30*time.Second {
+		t.Fatalf("unreachable gateway took too long: %v", elapsed)
+	}
+	if !strings.Contains(err.Error(), "connection refused") {
+		t.Fatalf("err = %v, want connection refused", err)
+	}
+}
+

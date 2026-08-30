@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -35,13 +36,18 @@ type GatewayClient struct {
 	HTTP    *http.Client
 }
 
-// NewGatewayClient returns a client for baseURL (e.g. "http://localhost:8080").
+// NewGatewayClient returns a client for baseURL (e.g. "http://localhost:8080"
+// or "http://192.168.1.42:8080" for a LAN gateway).
 func NewGatewayClient(baseURL string) *GatewayClient {
+	tr := http.DefaultTransport.(*http.Transport).Clone()
+	// Fail fast on unreachable hosts (e.g. wrong LAN IP) instead of hanging
+	// for the OS connect timeout.
+	tr.DialContext = (&net.Dialer{Timeout: 10 * time.Second}).DialContext
 	return &GatewayClient{
 		BaseURL: strings.TrimRight(baseURL, "/"),
-		// No overall timeout: streaming responses are bounded by the
-		// gateway's generation timeout, and cancellation is ctx-driven.
-		HTTP: &http.Client{Timeout: 2 * time.Minute},
+		// Overall timeout bounds non-streaming calls; streaming responses are
+		// bounded by the gateway's generation timeout and ctx cancellation.
+		HTTP: &http.Client{Timeout: 2 * time.Minute, Transport: tr},
 	}
 }
 

@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -32,6 +33,7 @@ func main() {
 	}
 
 	mockMode := flag.Bool("mock", false, "use a built-in fake provider (no API key needed)")
+	listen := flag.String("listen", "", `listen address, e.g. "0.0.0.0:8080" for LAN tests (default 127.0.0.1:8080)`)
 	flag.Parse()
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -53,9 +55,12 @@ func main() {
 		p = dc
 	}
 
-	addr := config.GatewayAddr()
+	addr := config.ListenAddr(*listen)
 	gatewayURL := config.GatewayURL()
 	genTimeout := config.Duration("DS_GEN_TIMEOUT", 60*time.Second)
+	if !isLoopbackAddr(addr) {
+		fmt.Printf("dsgateway: WARNING listening on %s — reachable from the LAN\n", addr)
+	}
 
 	mgr := session.New(session.Config{
 		PairTimeout: config.Duration("DS_PAIR_TIMEOUT", 120*time.Second),
@@ -87,6 +92,19 @@ func main() {
 	defer cancel()
 	_ = srv.Shutdown(shutdownCtx)
 	fmt.Println("dsgateway stopped.")
+}
+
+// isLoopbackAddr reports whether addr (host:port) binds only to loopback.
+func isLoopbackAddr(addr string) bool {
+	host, _, err := net.SplitHostPort(addr)
+	if err != nil {
+		return false // malformed or bare ":8080" — treat as non-loopback
+	}
+	if host == "localhost" {
+		return true
+	}
+	ip := net.ParseIP(host)
+	return ip != nil && ip.IsLoopback()
 }
 
 // runApprove implements `dsgateway approve <code>` on the trusted machine.
