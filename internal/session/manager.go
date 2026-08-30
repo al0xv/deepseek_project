@@ -2,6 +2,7 @@ package session
 
 import (
 	"context"
+	"crypto/subtle"
 	"sync"
 	"time"
 
@@ -176,8 +177,46 @@ func (m *Manager) approve(s *Session) (*Session, error) {
 	if s.State != protocol.StateWaiting {
 		return nil, ErrAlreadyApproved
 	}
+	tok, err := crypto.NewToken()
+	if err != nil {
+		return nil, err
+	}
+	s.ControlToken = tok
 	s.State = protocol.StateApproved
 	return s, nil
+}
+
+// ControlToken returns the control token issued to the approving controller.
+func (m *Manager) ControlToken(id string) (string, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	s, ok := m.sessions[id]
+	if !ok {
+		return "", ErrNotFound
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.ControlToken, nil
+}
+
+// EndByControlToken destroys a session if token matches the control token
+// issued at approval. The token is a controller capability: it is memory-only
+// and becomes invalid as soon as the session is destroyed.
+func (m *Manager) EndByControlToken(id, token string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	s, ok := m.sessions[id]
+	if !ok {
+		return ErrNotFound
+	}
+	s.mu.Lock()
+	want := s.ControlToken
+	s.mu.Unlock()
+	if token == "" || subtle.ConstantTimeCompare([]byte(want), []byte(token)) != 1 {
+		return ErrUnauthorized
+	}
+	m.destroyLocked(id)
+	return nil
 }
 
 // PreparePrompt appends the user message, moves the session to ACTIVE and
@@ -294,6 +333,7 @@ func (m *Manager) destroyLocked(id string) {
 	s.State = protocol.StateDestroyed
 	s.History = nil
 	s.APIKey = ""
+	s.ControlToken = ""
 	s.PairToken = ""
 	s.genCancel = nil
 	code := s.PairCode

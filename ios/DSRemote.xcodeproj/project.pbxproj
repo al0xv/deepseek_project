@@ -1,0 +1,509 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		012FE09912C74EA4B66C973C /* PairingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AF16539266FE1248C7774D7 /* PairingView.swift */; };
+		02673BE56CCDC64B7CE2EB7A /* GatewayURLValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 262A8A31853DA76E75FAECCE /* GatewayURLValidator.swift */; };
+		30C6AA57F29A18BA229539DA /* GatewayURLTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B17A6858136335C053176344 /* GatewayURLTests.swift */; };
+		3C68E63800AA506CA5272777 /* AppViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41AE3CEB85FC6289F39D907C /* AppViewModel.swift */; };
+		722B045F1F98B133F41298D7 /* ControlSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF15A9856CC9F0E343EF5BB9 /* ControlSession.swift */; };
+		76CAADF14FD1E2EE91961D12 /* PairingCode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06EA88D4F619CC3210B472B5 /* PairingCode.swift */; };
+		796E1DA4BDF770416F8D010E /* DSRemoteApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DEEB4037EF801AB6F9CF711 /* DSRemoteApp.swift */; };
+		86F8EA27E5A11C4477B5B7E4 /* GatewaySetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6811E48287A3814BD20EAB34 /* GatewaySetupView.swift */; };
+		888363139938710AFD21E29A /* ActiveSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30C15C8CA6B3AB99418DCDB2 /* ActiveSessionView.swift */; };
+		8A5FB57590D29CD26A6BE34F /* BiometricAuthenticator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9EA17EE8B3AC3768934B7F1 /* BiometricAuthenticator.swift */; };
+		965617162DA9CCFF1A2D1EC6 /* PairingCodeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEBC509F2FC4BB52D1FBB535 /* PairingCodeTests.swift */; };
+		9FE501347DD0AC1F2D00824B /* GatewayClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12E718C3F74E810363F14200 /* GatewayClient.swift */; };
+		A4FF3FA2869CC66F68537D5F /* AppViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA207DACA61CC0B1D3F78E52 /* AppViewModelTests.swift */; };
+		B3849DC7EBD4157B90372234 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D47FBB2E3B1722DAB5930F1 /* ContentView.swift */; };
+		B7043CE26CB780E33EB8AE07 /* AppError.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5E45F357BC6F8059D642D78 /* AppError.swift */; };
+		BC446D61300EA0C386C999BF /* KeychainStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3F3B4B0519B668581AF72C1 /* KeychainStore.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		56207F56A90A486308EC5923 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B32B0D458E3715EDE506CA80 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 89C16EBA267CDF56B3A903F8;
+			remoteInfo = DSRemote;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		01F232619B37DA16409E91EA /* DSRemoteTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = DSRemoteTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		06EA88D4F619CC3210B472B5 /* PairingCode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairingCode.swift; sourceTree = "<group>"; };
+		12E718C3F74E810363F14200 /* GatewayClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GatewayClient.swift; sourceTree = "<group>"; };
+		262A8A31853DA76E75FAECCE /* GatewayURLValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GatewayURLValidator.swift; sourceTree = "<group>"; };
+		2AF16539266FE1248C7774D7 /* PairingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairingView.swift; sourceTree = "<group>"; };
+		30C15C8CA6B3AB99418DCDB2 /* ActiveSessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveSessionView.swift; sourceTree = "<group>"; };
+		41AE3CEB85FC6289F39D907C /* AppViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppViewModel.swift; sourceTree = "<group>"; };
+		5DEEB4037EF801AB6F9CF711 /* DSRemoteApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSRemoteApp.swift; sourceTree = "<group>"; };
+		6811E48287A3814BD20EAB34 /* GatewaySetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GatewaySetupView.swift; sourceTree = "<group>"; };
+		7D47FBB2E3B1722DAB5930F1 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		A5E45F357BC6F8059D642D78 /* AppError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppError.swift; sourceTree = "<group>"; };
+		B17A6858136335C053176344 /* GatewayURLTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GatewayURLTests.swift; sourceTree = "<group>"; };
+		BEBC509F2FC4BB52D1FBB535 /* PairingCodeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairingCodeTests.swift; sourceTree = "<group>"; };
+		C51B4AE3D11497F16A9F8E11 /* DSRemote.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = DSRemote.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		CF15A9856CC9F0E343EF5BB9 /* ControlSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlSession.swift; sourceTree = "<group>"; };
+		D3F3B4B0519B668581AF72C1 /* KeychainStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainStore.swift; sourceTree = "<group>"; };
+		EA207DACA61CC0B1D3F78E52 /* AppViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppViewModelTests.swift; sourceTree = "<group>"; };
+		F9EA17EE8B3AC3768934B7F1 /* BiometricAuthenticator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiometricAuthenticator.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		0569EF5EEDCDACD3912354E4 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				30C15C8CA6B3AB99418DCDB2 /* ActiveSessionView.swift */,
+				7D47FBB2E3B1722DAB5930F1 /* ContentView.swift */,
+				6811E48287A3814BD20EAB34 /* GatewaySetupView.swift */,
+				2AF16539266FE1248C7774D7 /* PairingView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		0DDD6CD019A86851298884FC /* Networking */ = {
+			isa = PBXGroup;
+			children = (
+				12E718C3F74E810363F14200 /* GatewayClient.swift */,
+				262A8A31853DA76E75FAECCE /* GatewayURLValidator.swift */,
+				06EA88D4F619CC3210B472B5 /* PairingCode.swift */,
+			);
+			path = Networking;
+			sourceTree = "<group>";
+		};
+		17DB4309B38D2663CF0B2DD0 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				5DEEB4037EF801AB6F9CF711 /* DSRemoteApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		710F7470BD4F0530EAF9F929 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				A5E45F357BC6F8059D642D78 /* AppError.swift */,
+				CF15A9856CC9F0E343EF5BB9 /* ControlSession.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		7B8FF17D1A02A20C84B7FF7E /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				41AE3CEB85FC6289F39D907C /* AppViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		7F82078ED2637743781AC38B /* Security */ = {
+			isa = PBXGroup;
+			children = (
+				F9EA17EE8B3AC3768934B7F1 /* BiometricAuthenticator.swift */,
+				D3F3B4B0519B668581AF72C1 /* KeychainStore.swift */,
+			);
+			path = Security;
+			sourceTree = "<group>";
+		};
+		A94F5C3A224F3711F06B3F53 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				C51B4AE3D11497F16A9F8E11 /* DSRemote.app */,
+				01F232619B37DA16409E91EA /* DSRemoteTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		B19B27FF4274048263E02663 /* DSRemote */ = {
+			isa = PBXGroup;
+			children = (
+				17DB4309B38D2663CF0B2DD0 /* App */,
+				710F7470BD4F0530EAF9F929 /* Models */,
+				0DDD6CD019A86851298884FC /* Networking */,
+				7F82078ED2637743781AC38B /* Security */,
+				7B8FF17D1A02A20C84B7FF7E /* ViewModels */,
+				0569EF5EEDCDACD3912354E4 /* Views */,
+			);
+			path = DSRemote;
+			sourceTree = "<group>";
+		};
+		DAE37DE3F72D3B37D626C497 = {
+			isa = PBXGroup;
+			children = (
+				B19B27FF4274048263E02663 /* DSRemote */,
+				F861D544CE0629D2F43A9265 /* DSRemoteTests */,
+				A94F5C3A224F3711F06B3F53 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		F861D544CE0629D2F43A9265 /* DSRemoteTests */ = {
+			isa = PBXGroup;
+			children = (
+				EA207DACA61CC0B1D3F78E52 /* AppViewModelTests.swift */,
+				B17A6858136335C053176344 /* GatewayURLTests.swift */,
+				BEBC509F2FC4BB52D1FBB535 /* PairingCodeTests.swift */,
+			);
+			path = DSRemoteTests;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		89C16EBA267CDF56B3A903F8 /* DSRemote */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3033DFD56B202C0FAD0CCA5F /* Build configuration list for PBXNativeTarget "DSRemote" */;
+			buildPhases = (
+				3E01FFCED9E3A57B5C97FC60 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = DSRemote;
+			packageProductDependencies = (
+			);
+			productName = DSRemote;
+			productReference = C51B4AE3D11497F16A9F8E11 /* DSRemote.app */;
+			productType = "com.apple.product-type.application";
+		};
+		A9F7CF5FF98557A1B359CD6B /* DSRemoteTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F05E2F9A1E60F260869162A0 /* Build configuration list for PBXNativeTarget "DSRemoteTests" */;
+			buildPhases = (
+				867F6CA87E380B095095FA99 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				37BBD09A0F40EC49FDD17CA8 /* PBXTargetDependency */,
+			);
+			name = DSRemoteTests;
+			packageProductDependencies = (
+			);
+			productName = DSRemoteTests;
+			productReference = 01F232619B37DA16409E91EA /* DSRemoteTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		B32B0D458E3715EDE506CA80 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					89C16EBA267CDF56B3A903F8 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+					A9F7CF5FF98557A1B359CD6B = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 387A9F5D15849799F66A3FA0 /* Build configuration list for PBXProject "DSRemote" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = DAE37DE3F72D3B37D626C497;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = A94F5C3A224F3711F06B3F53 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				89C16EBA267CDF56B3A903F8 /* DSRemote */,
+				A9F7CF5FF98557A1B359CD6B /* DSRemoteTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		3E01FFCED9E3A57B5C97FC60 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				888363139938710AFD21E29A /* ActiveSessionView.swift in Sources */,
+				B7043CE26CB780E33EB8AE07 /* AppError.swift in Sources */,
+				3C68E63800AA506CA5272777 /* AppViewModel.swift in Sources */,
+				8A5FB57590D29CD26A6BE34F /* BiometricAuthenticator.swift in Sources */,
+				B3849DC7EBD4157B90372234 /* ContentView.swift in Sources */,
+				722B045F1F98B133F41298D7 /* ControlSession.swift in Sources */,
+				796E1DA4BDF770416F8D010E /* DSRemoteApp.swift in Sources */,
+				9FE501347DD0AC1F2D00824B /* GatewayClient.swift in Sources */,
+				86F8EA27E5A11C4477B5B7E4 /* GatewaySetupView.swift in Sources */,
+				02673BE56CCDC64B7CE2EB7A /* GatewayURLValidator.swift in Sources */,
+				BC446D61300EA0C386C999BF /* KeychainStore.swift in Sources */,
+				76CAADF14FD1E2EE91961D12 /* PairingCode.swift in Sources */,
+				012FE09912C74EA4B66C973C /* PairingView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		867F6CA87E380B095095FA99 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A4FF3FA2869CC66F68537D5F /* AppViewModelTests.swift in Sources */,
+				30C6AA57F29A18BA229539DA /* GatewayURLTests.swift in Sources */,
+				965617162DA9CCFF1A2D1EC6 /* PairingCodeTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		37BBD09A0F40EC49FDD17CA8 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 89C16EBA267CDF56B3A903F8 /* DSRemote */;
+			targetProxy = 56207F56A90A486308EC5923 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		96EA5194C8AC4208FCC2C3EC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.deepseek.dsremote;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		B4D6128235FF0C4F4FF70AB7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.deepseek.dsremote;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		BE61267EE859C3F0D2B1C7F8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.deepseek.dsremote.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DSRemote.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/DSRemote";
+			};
+			name = Debug;
+		};
+		C5358C957AF069AF1C878364 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.deepseek.dsremote.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DSRemote.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/DSRemote";
+			};
+			name = Release;
+		};
+		D407AFB979C669361062F162 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		D5FC1EBDF67FF06D24EF10A2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		3033DFD56B202C0FAD0CCA5F /* Build configuration list for PBXNativeTarget "DSRemote" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				96EA5194C8AC4208FCC2C3EC /* Debug */,
+				B4D6128235FF0C4F4FF70AB7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		387A9F5D15849799F66A3FA0 /* Build configuration list for PBXProject "DSRemote" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D407AFB979C669361062F162 /* Debug */,
+				D5FC1EBDF67FF06D24EF10A2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		F05E2F9A1E60F260869162A0 /* Build configuration list for PBXNativeTarget "DSRemoteTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BE61267EE859C3F0D2B1C7F8 /* Debug */,
+				C5358C957AF069AF1C878364 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = B32B0D458E3715EDE506CA80 /* Project object */;
+}

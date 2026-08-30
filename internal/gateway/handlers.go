@@ -76,7 +76,16 @@ func (g *Gateway) handleApprove(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO(MVP3): if req.APIKey != "" store it in the session for the provider.
-	writeJSON(w, http.StatusOK, protocol.ApproveResponse{SessionID: s.ID, State: s.State})
+	tok, err := g.mgr.ControlToken(s.ID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, protocol.ErrUpstream, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, protocol.ApproveResponse{
+		SessionID:    s.ID,
+		State:        s.State,
+		ControlToken: tok,
+	})
 }
 
 func (g *Gateway) handleStatus(w http.ResponseWriter, r *http.Request) {
@@ -97,6 +106,38 @@ func (g *Gateway) handleClose(w http.ResponseWriter, r *http.Request) {
 	}
 	g.mgr.Destroy(id)
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// handleEnd is the controller endpoint: it destroys a session only when the
+// request proves ownership via the control token issued at approval.
+func (g *Gateway) handleEnd(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	token := bearerToken(r.Header.Get("Authorization"))
+	if token == "" {
+		writeError(w, http.StatusUnauthorized, protocol.ErrUnauthorized, "missing control token")
+		return
+	}
+	err := g.mgr.EndByControlToken(id, token)
+	switch {
+	case errors.Is(err, session.ErrNotFound):
+		writeError(w, http.StatusNotFound, protocol.ErrNotFound, "session not found")
+	case errors.Is(err, session.ErrUnauthorized):
+		writeError(w, http.StatusForbidden, protocol.ErrUnauthorized, "invalid control token")
+	case err != nil:
+		writeError(w, http.StatusInternalServerError, protocol.ErrUpstream, err.Error())
+	default:
+		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+// bearerToken extracts the token from an "Authorization: Bearer <token>"
+// header value. It returns "" when missing or not a Bearer scheme.
+func bearerToken(header string) string {
+	const prefix = "Bearer "
+	if len(header) > len(prefix) && strings.EqualFold(header[:len(prefix)], prefix) {
+		return strings.TrimSpace(header[len(prefix):])
+	}
+	return ""
 }
 
 func (g *Gateway) handleCancel(w http.ResponseWriter, r *http.Request) {

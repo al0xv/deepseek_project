@@ -238,3 +238,120 @@ func TestDestroyDuringActiveGenerationCancels(t *testing.T) {
 		t.Fatal("destroy did not cancel in-flight generation")
 	}
 }
+
+func TestApproveGeneratesControlToken(t *testing.T) {
+	m, _ := newTestManager(time.Minute, time.Minute, 4)
+	s, _ := m.Create()
+	if _, err := m.ApproveByCode(s.PairCode); err != nil {
+		t.Fatal(err)
+	}
+	tok, err := m.ControlToken(s.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if tok == "" {
+		t.Fatal("control token is empty")
+	}
+	if len(tok) != 43 {
+		t.Fatalf("control token length = %d, want 43 (32 bytes base64url)", len(tok))
+	}
+}
+
+func TestControlTokensAreUnique(t *testing.T) {
+	m, _ := newTestManager(time.Minute, time.Minute, 20)
+	seen := map[string]bool{}
+	for i := 0; i < 20; i++ {
+		s, _ := m.Create()
+		if _, err := m.ApproveByCode(s.PairCode); err != nil {
+			t.Fatal(err)
+		}
+		tok, _ := m.ControlToken(s.ID)
+		if seen[tok] {
+			t.Fatal("duplicate control token")
+		}
+		seen[tok] = true
+	}
+}
+
+func TestEndByControlTokenValid(t *testing.T) {
+	m, _ := newTestManager(time.Minute, time.Minute, 4)
+	s, _ := m.Create()
+	_, _ = m.ApproveByCode(s.PairCode)
+	tok, _ := m.ControlToken(s.ID)
+
+	if err := m.EndByControlToken(s.ID, tok); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := m.Status(s.ID); err != ErrNotFound {
+		t.Fatalf("session not destroyed: %v", err)
+	}
+}
+
+func TestEndByControlTokenWrongToken(t *testing.T) {
+	m, _ := newTestManager(time.Minute, time.Minute, 4)
+	s, _ := m.Create()
+	_, _ = m.ApproveByCode(s.PairCode)
+
+	if err := m.EndByControlToken(s.ID, "wrong-token"); err != ErrUnauthorized {
+		t.Fatalf("err = %v, want ErrUnauthorized", err)
+	}
+	if st, _ := m.Status(s.ID); st != StateApproved {
+		t.Fatalf("session state = %q after rejected end, want APPROVED", st)
+	}
+}
+
+func TestEndByControlTokenEmptyToken(t *testing.T) {
+	m, _ := newTestManager(time.Minute, time.Minute, 4)
+	s, _ := m.Create()
+	_, _ = m.ApproveByCode(s.PairCode)
+	if err := m.EndByControlToken(s.ID, ""); err != ErrUnauthorized {
+		t.Fatalf("err = %v, want ErrUnauthorized", err)
+	}
+}
+
+func TestEndByControlTokenCrossSession(t *testing.T) {
+	m, _ := newTestManager(time.Minute, time.Minute, 4)
+	a, _ := m.Create()
+	b, _ := m.Create()
+	_, _ = m.ApproveByCode(a.PairCode)
+	_, _ = m.ApproveByCode(b.PairCode)
+	tokA, _ := m.ControlToken(a.ID)
+
+	// Token from session A must not control session B.
+	if err := m.EndByControlToken(b.ID, tokA); err != ErrUnauthorized {
+		t.Fatalf("err = %v, want ErrUnauthorized", err)
+	}
+	if st, _ := m.Status(b.ID); st != StateApproved {
+		t.Fatalf("session B state = %q, want APPROVED", st)
+	}
+	// And A itself still works.
+	if err := m.EndByControlToken(a.ID, tokA); err != nil {
+		t.Fatalf("session A end failed: %v", err)
+	}
+}
+
+func TestEndByControlTokenDestroyedSession(t *testing.T) {
+	m, _ := newTestManager(time.Minute, time.Minute, 4)
+	s, _ := m.Create()
+	_, _ = m.ApproveByCode(s.PairCode)
+	tok, _ := m.ControlToken(s.ID)
+
+	m.Destroy(s.ID)
+	if err := m.EndByControlToken(s.ID, tok); err != ErrNotFound {
+		t.Fatalf("err = %v, want ErrNotFound", err)
+	}
+}
+
+func TestControlTokenClearedAfterDestroy(t *testing.T) {
+	m, _ := newTestManager(time.Minute, time.Minute, 4)
+	s, _ := m.Create()
+	_, _ = m.ApproveByCode(s.PairCode)
+	if _, _ = m.ControlToken(s.ID); s.ControlToken == "" {
+		t.Fatal("control token not set after approve")
+	}
+	m.Destroy(s.ID)
+	if s.ControlToken != "" {
+		t.Fatal("control token not cleared after destroy")
+	}
+}
+

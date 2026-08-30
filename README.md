@@ -127,6 +127,22 @@ Session destroyed.
    возвращается в безопасное состояние (prompt). Reconnect/resume
    намеренно не поддерживается.
 
+## iPhone manual pairing development flow
+
+Замена `./bin/dsgateway approve XXXXXX` на подтверждение с iPhone
+(приложение DS Remote, `ios/`).
+
+1. **Mac**: `./bin/dsgateway -mock -listen 0.0.0.0:8080`
+2. **Terminal**: `./bin/ds --remote http://<MAC_IP>:8080` → `Code: XXX XXX`
+3. **iPhone**: DS Remote → указать `http://<MAC_IP>:8080` → ввести код →
+   **Approve** → Face ID
+4. **Terminal**: `✓ Approved` → чат (mock)
+5. **iPhone**: **End Session** → сессия уничтожается (`DELETE /v1/sessions/{id}`
+   c `Authorization: Bearer <control_token>`)
+6. **Terminal** при следующем prompt: `Error: not_found: session not found`
+
+Детали: `ios/README.md`. QR-скан в этой фазе не реализован.
+
 ## Переменные окружения
 
 | Переменная | Значение по умолчанию | Описание |

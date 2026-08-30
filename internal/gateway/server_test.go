@@ -1,7 +1,10 @@
 package gateway
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
+	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -198,3 +201,155 @@ func TestDisconnectDestroysSession(t *testing.T) {
 	}
 	t.Fatal("session not destroyed after disconnect")
 }
+
+// approveRaw performs the raw POST /v1/pair request (as the CLI/iPhone do).
+func approveRaw(t *testing.T, baseURL, code string) *http.Response {
+	t.Helper()
+	body := bytes.NewReader([]byte(`{"pairing_code":"` + protocol.NormalizePairCode(code) + `"}`))
+	resp, err := http.Post(baseURL+"/v1/pair", "application/json", body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return resp
+}
+
+func TestApproveReturnsControlToken(t *testing.T) {
+	_, gc, _ := newTestGateway(t, session.Config{})
+	sess, err := gc.CreateSession()
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp := approveRaw(t, gc.BaseURL, sess.PairingCode)
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("status = %d", resp.StatusCode)
+	}
+	var ar protocol.ApproveResponse
+	if err := json.NewDecoder(resp.Body).Decode(&ar); err != nil {
+		t.Fatal(err)
+	}
+	if ar.SessionID != sess.SessionID {
+		t.Fatalf("session_id = %q, want %q", ar.SessionID, sess.SessionID)
+	}
+	if ar.State != protocol.StateApproved {
+		t.Fatalf("state = %q, want APPROVED", ar.State)
+	}
+	if ar.ControlToken == "" || len(ar.ControlToken) != 43 {
+		t.Fatalf("control_token = %q, want 43 chars", ar.ControlToken)
+	}
+}
+
+func endSessionRequest(t *testing.T, baseURL, id, token string) *http.Response {
+	t.Helper()
+	req, err := http.NewRequest(http.MethodDelete, baseURL+"/v1/sessions/"+id, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return resp
+}
+
+func TestEndSessionOverHTTP(t *testing.T) {
+	_, gc, _ := newTestGateway(t, session.Config{})
+	sess, err := gc.CreateSession()
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp := approveRaw(t, gc.BaseURL, sess.PairingCode)
+	var ar protocol.ApproveResponse
+	_ = json.NewDecoder(resp.Body).Decode(&ar)
+	resp.Body.Close()
+
+	del := endSessionRequest(t, gc.BaseURL, sess.SessionID, ar.ControlToken)
+	defer del.Body.Close()
+	if del.StatusCode != http.StatusNoContent {
+		t.Fatalf("status = %d, want 204", del.StatusCode)
+	}
+	if _, err := gc.Status(sess.SessionID); err == nil {
+		t.Fatal("session still exists after controller end")
+	}
+}
+
+func TestEndSessionWrongToken(t *testing.T) {
+	_, gc, _ := newTestGateway(t, session.Config{})
+	sess, err := gc.CreateSession()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := gc.Approve(sess.PairingToken); err != nil {
+		t.Fatal(err)
+	}
+
+	del := endSessionRequest(t, gc.BaseURL, sess.SessionID, "wrong-token")
+	defer del.Body.Close()
+	if del.StatusCode != http.StatusForbidden {
+		t.Fatalf("status = %d, want 403", del.StatusCode)
+	}
+	var eb protocol.ErrorBody
+	_ = json.NewDecoder(del.Body).Decode(&eb)
+	if eb.Code != protocol.ErrUnauthorized {
+		t.Fatalf("error code = %q, want unauthorized", eb.Code)
+	}
+	// Session must still be alive.
+	st, err := gc.Status(sess.SessionID)
+	if err != nil || st != protocol.StateApproved {
+		t.Fatalf("session after rejected end = %q, %v", st, err)
+	}
+}
+
+func TestEndSessionMissingToken(t *testing.T) {
+	_, gc, _ := newTestGateway(t, session.Config{})
+	sess, err := gc.CreateSession()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := gc.Approve(sess.PairingToken); err != nil {
+		t.Fatal(err)
+	}
+
+	del := endSessionRequest(t, gc.BaseURL, sess.SessionID, "")
+	defer del.Body.Close()
+	if del.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("status = %d, want 401", del.StatusCode)
+	}
+}
+
+func TestEndSessionUnknownSession(t *testing.T) {
+	_, gc, _ := newTestGateway(t, session.Config{})
+	del := endSessionRequest(t, gc.BaseURL, "nonexistent", "some-token")
+	defer del.Body.Close()
+	if del.StatusCode != http.StatusNotFound {
+		t.Fatalf("status = %d, want 404", del.StatusCode)
+	}
+}
+
+func TestEndSessionOnceOnly(t *testing.T) {
+	_, gc, _ := newTestGateway(t, session.Config{})
+	sess, err := gc.CreateSession()
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp := approveRaw(t, gc.BaseURL, sess.PairingCode)
+	var ar protocol.ApproveResponse
+	_ = json.NewDecoder(resp.Body).Decode(&ar)
+	resp.Body.Close()
+
+	if del := endSessionRequest(t, gc.BaseURL, sess.SessionID, ar.ControlToken); del.StatusCode != http.StatusNoContent {
+		t.Fatalf("first end status = %d", del.StatusCode)
+	} else {
+		del.Body.Close()
+	}
+	// Repeating the end must not resurrect the session.
+	del2 := endSessionRequest(t, gc.BaseURL, sess.SessionID, ar.ControlToken)
+	defer del2.Body.Close()
+	if del2.StatusCode != http.StatusNotFound {
+		t.Fatalf("second end status = %d, want 404", del2.StatusCode)
+	}
+}
+

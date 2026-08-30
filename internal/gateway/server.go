@@ -66,6 +66,7 @@ func (g *Gateway) Handler() http.Handler {
 	mux.HandleFunc("POST /v1/sessions/{id}/prompt", g.handlePrompt)
 	mux.HandleFunc("POST /v1/sessions/{id}/cancel", g.handleCancel)
 	mux.HandleFunc("POST /v1/sessions/{id}/close", g.handleClose)
+	mux.HandleFunc("DELETE /v1/sessions/{id}", g.handleEnd)
 	return mux
 }
 

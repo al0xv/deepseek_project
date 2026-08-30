@@ -26,6 +26,7 @@ var (
 	ErrAlreadyApproved = errors.New("session already approved")
 	ErrNotApproved     = errors.New("session is not approved")
 	ErrNotActive       = errors.New("no generation in flight")
+	ErrUnauthorized    = errors.New("invalid control token")
 )
 
 // Session is a single terminal session. It lives entirely in memory and is
@@ -39,6 +40,10 @@ type Session struct {
 	IdleDeadline time.Time
 	History      []provider.Message
 	APIKey       string // only populated by the iOS controller (MVP3)
+	// ControlToken is a temporary controller capability issued on approval.
+	// It is memory-only, tied to this session, never shown to the terminal
+	// client and cleared on destroy.
+	ControlToken string
 
 	mu        sync.Mutex
 	genCancel func()

@@ -67,6 +67,7 @@ const (
 	ErrTooManySessions = "too_many_sessions"
 	ErrNotApproved     = "not_approved"
 	ErrBadRequest      = "bad_request"
+	ErrUnauthorized    = "unauthorized"
 )
 
 // ErrorBody is the JSON body of non-200 HTTP responses.
@@ -85,9 +86,13 @@ type ApproveRequest struct {
 }
 
 // ApproveResponse is returned by POST /v1/pair.
+// ControlToken is a temporary controller capability valid for the lifetime of
+// the session: it is memory-only, never shown to the terminal client and is
+// invalidated once the session is destroyed.
 type ApproveResponse struct {
-	SessionID string       `json:"session_id"`
-	State     SessionState `json:"state"`
+	SessionID    string       `json:"session_id"`
+	State        SessionState `json:"state"`
+	ControlToken string       `json:"control_token,omitempty"`
 }
 
 // PairingPayload is what the QR code encodes. It never contains an API key.
