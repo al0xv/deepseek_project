@@ -4,8 +4,27 @@
 чужого Windows/macOS компьютера. API key никогда не покидает доверенное
 устройство. История живёт только в RAM и уничтожается вместе с сессией.
 
-Статус: **MVP2 реализован** (клиент + gateway + pairing с QR). MVP3 (iOS)
-— задокументирован как будущий этап.
+Статус: **MVP0–MVP2 + Phase 2.4 + Phase 3.1 + Phase 3.2 реализованы**.
+
+## Verification status
+
+| Check | Status |
+|-------|--------|
+| Go build/vet/test | PASS (автоматически, каждый этап) |
+| Windows amd64 cross-build | PASS (автоматически) |
+| Real iPhone QR verification | **PASS** (физический iPhone) |
+| Real iPhone Face ID verification | **PASS** (физический iPhone) |
+| Real iPhone approval flow | **PASS** (физический iPhone) |
+| Real iPhone End Session | **PASS** (физический iPhone) |
+| Real Windows verification | `AWAITING REAL WINDOWS VERIFICATION` |
+| Real DeepSeek API verification | `AWAITING REAL DEEPSEEK API VERIFICATION` |
+
+## Known fixed bug
+
+Первый физический тест на iPhone обнаружил crash при обращении к Face ID без
+`NSFaceIDUsageDescription` («crashed because it attempted to access privacy
+sensitive data without a usage description»). Фикс персистентно закреплён в
+`ios/Info.plist` (source of truth; переживает xcodegen-регенерацию).
 
 ## Возможности
 
@@ -142,6 +161,48 @@ Session destroyed.
 6. **Terminal** при следующем prompt: `Error: not_found: session not found`
 
 Детали: `ios/README.md`. Ручной ввод 6-значного кода остаётся fallback'ом.
+
+## Real DeepSeek manual verification
+
+Проверка реального DeepSeek API на Mac + физическом iPhone (без mock).
+
+### Terminal 1 — gateway (trusted Mac)
+
+```bash
+export DEEPSEEK_API_KEY='MY_REAL_KEY'   # не печатать ключ в history, если возможно
+./bin/dsgateway -listen 0.0.0.0:8080
+```
+
+Если ключа нет — gateway завершится с понятной ошибкой
+(`DEEPSEEK_API_KEY is not set`). LAN IP:
+
+```bash
+ipconfig getifaddr en0        # например 192.168.20.13
+```
+
+### Terminal 2 — DS client
+
+```bash
+./bin/ds --remote http://127.0.0.1:8080
+```
+
+Ожидание: `QR`, `Code: XXX XXX`, `Waiting for approval...`.
+
+### Физический iPhone
+
+DS Remote → Gateway = `http://<MAC_LAN_IP>:8080` → **Scan QR** → Face ID →
+`ACTIVE SESSION`. Терминал: `✓ Approved`, `DeepSeek ready.`, `You >`.
+
+Затем реальный prompt, например:
+
+```
+Привет. Ответь одной короткой фразой и скажи, что ты работаешь через DeepSeek API.
+```
+
+Ожидание: ответ **не** `mock reply to: ...`, реальная модель, стриминг.
+Второй ход: `А какой был мой предыдущий вопрос?` — модель показывает
+multi-turn контекст. Затем на iPhone **End Session** → следующий prompt в
+терминале: `Error: not_found: session not found`.
 
 ## Переменные окружения
 

@@ -2,3 +2,4 @@ bin/
 *.exe
 *.log
 .DS_Store
+xcuserdata/

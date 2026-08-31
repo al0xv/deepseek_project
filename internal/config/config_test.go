@@ -1,6 +1,9 @@
 package config
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestGatewayAddrDefaultIsLoopback(t *testing.T) {
 	t.Setenv("DS_GATEWAY_ADDR", "")
@@ -37,5 +40,27 @@ func TestGatewayURLDefault(t *testing.T) {
 	t.Setenv("DS_GATEWAY_URL", "")
 	if got := GatewayURL(); got != "http://localhost:8080" {
 		t.Fatalf("GatewayURL = %q, want http://localhost:8080", got)
+	}
+}
+
+func TestAPIKeyMissingFailsClearly(t *testing.T) {
+	t.Setenv("DEEPSEEK_API_KEY", "")
+	_, err := APIKey()
+	if err == nil {
+		t.Fatal("expected an error when DEEPSEEK_API_KEY is unset")
+	}
+	if !strings.Contains(err.Error(), "DEEPSEEK_API_KEY") || !strings.Contains(err.Error(), "not set") {
+		t.Fatalf("err = %v, want a clear fail-fast message", err)
+	}
+}
+
+func TestAPIKeyPresent(t *testing.T) {
+	t.Setenv("DEEPSEEK_API_KEY", "sk-fake-test")
+	got, err := APIKey()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != "sk-fake-test" {
+		t.Fatalf("key = %q", got)
 	}
 }

@@ -1,6 +1,6 @@
 BIN := bin
 
-.PHONY: build test vet build-windows build-macos clean
+.PHONY: build test vet build-windows build-macos clean ios-plist-check
 
 build:
 	mkdir -p $(BIN)
@@ -17,6 +17,11 @@ test:
 
 vet:
 	go vet ./...
+
+# Verifies the iOS source Info.plist contains the required privacy usage
+# descriptions (NSFaceIDUsageDescription among them) and no forbidden ones.
+ios-plist-check:
+	scripts/check-ios-plist.sh
 
 clean:
 	rm -rf $(BIN)

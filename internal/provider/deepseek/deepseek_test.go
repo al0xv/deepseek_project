@@ -2,6 +2,7 @@ package deepseek
 
 import (
 	"context"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -36,7 +37,15 @@ func TestStreamCompletion(t *testing.T) {
 		"data: [DONE]\n\n",
 	}, func(r *http.Request) {
 		if got := r.Header.Get("Authorization"); got != "Bearer test-key" {
-			t.Errorf("auth = %q", got)
+			t.Errorf("auth = %q, want only the Authorization header carrying the key", got)
+		}
+		// The API key must never appear anywhere else in the outbound request.
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			t.Errorf("read body: %v", err)
+		}
+		if strings.Contains(string(body), "test-key") {
+			t.Errorf("API key leaked into request body: %s", body)
 		}
 	})
 	defer srv.Close()
@@ -114,10 +123,17 @@ func TestStreamCompletionHTTPError(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	c := New("k")
+	key := "sk-super-secret-test-key"
+	c := New(key)
 	c.BaseURL = srv.URL
 	_, err := c.StreamCompletion(context.Background(), provider.CompletionRequest{}, nil)
-	if err == nil || !strings.Contains(err.Error(), "400") {
-		t.Fatalf("err = %v", err)
+	if err == nil {
+		t.Fatal("expected an error for non-2xx upstream response")
+	}
+	if !strings.Contains(err.Error(), "400") {
+		t.Fatalf("err = %v, want upstream HTTP status surfaced", err)
+	}
+	if strings.Contains(err.Error(), key) {
+		t.Fatalf("upstream error leaks the API key: %v", err)
 	}
 }

@@ -30,6 +30,8 @@
 	</array>
 	<key>NSCameraUsageDescription</key>
 	<string>DS Remote uses the camera to scan temporary terminal pairing QR codes.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>DS Remote uses Face ID to approve temporary terminal sessions.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>DS Remote connects to your local DeepSeek gateway to approve terminal sessions.</string>
 	<key>NSAppTransportSecurity</key>
@@ -39,3 +41,4 @@
 	</dict>
 </dict>
 </plist>
+

@@ -11,6 +11,39 @@ DeepSeek. Pairing: **QR-скан** (основной) + **ручной ввод 
 - Никаких third-party зависимостей (чистые SwiftUI/Foundation/URLSession/
   LocalAuthentication/Security/AVFoundation)
 
+## Verification status
+
+| Check | Status |
+|-------|--------|
+| iOS build + unit tests (simulator) | PASS (автоматически) |
+| Real iPhone QR verification | **PASS** (физический iPhone) |
+| Real iPhone Face ID verification | **PASS** (физический iPhone) |
+| Real iPhone approval flow | **PASS** (физический iPhone) |
+| Real iPhone End Session | **PASS** (физический iPhone) |
+| Real Windows verification | `AWAITING REAL WINDOWS VERIFICATION` |
+
+### Fixed crash: missing NSFaceIDUsageDescription
+
+При первом физическом тесте app падала сразу после скана QR:
+«DSRemote crashed because it attempted to access privacy sensitive data
+without a usage description. Add NSFaceIDUsageDescription». Временный фикс
+в Xcode перенесён в source of truth — `ios/Info.plist`:
+
+```
+NSFaceIDUsageDescription = "DS Remote uses Face ID to approve temporary terminal sessions."
+```
+
+Ключ переживает `xcodegen generate` (Info.plist не генерируется xcodegen —
+он ссылается на файл через `INFOPLIST_FILE`). Регрессионная проверка:
+`make ios-plist-check` (`scripts/check-ios-plist.sh`) убеждается, что в
+Info.plist есть `NSCameraUsageDescription`, `NSLocalNetworkUsageDescription`,
+`NSFaceIDUsageDescription` и нет `NSMicrophoneUsageDescription` /
+`NSPhotoLibraryUsageDescription`.
+
+> Примечание: личный `DEVELOPMENT_TEAM` пользователя в репозиторий не
+> коммитится; при сборке на физическом устройстве его нужно выбрать в Xcode
+> (Signing & Capabilities).
+
 ## Структура
 
 ```
