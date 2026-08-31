@@ -20,6 +20,7 @@ DeepSeek. Pairing: **QR-скан** (основной) + **ручной ввод 
 | Real iPhone Face ID verification | **PASS** (физический iPhone) |
 | Real iPhone approval flow | **PASS** (физический iPhone) |
 | Real iPhone End Session | **PASS** (физический iPhone) |
+| Real DeepSeek API/streaming/multi-turn | **PASS** (реальный платный запрос) |
 | Real Windows verification | `AWAITING REAL WINDOWS VERIFICATION` |
 
 ### Fixed crash: missing NSFaceIDUsageDescription
@@ -119,6 +120,25 @@ DeepSeek API Key
 > В Phase 3.1 ключ хранится и управляется, но в approve-запрос не
 > передаётся: gateway работает с `-mock`, а session-scoped доставка key —
 > Phase 3.3.
+
+## Model & Thinking selection
+
+На экране Pairing (до Scan QR) доступны селекторы:
+
+```
+Model     [ V4 Flash ▾ ]   (V4 Flash / V4 Pro)
+Thinking  [ High ▾ ]       (Off / Low / High / Max)
+```
+
+- Default: **V4 Flash / High** (продуктовый default).
+- Выбор per-session: передаётся в approve-запросе (`model`, `thinking`,
+  `reasoning_effort`) и живёт в RAM сессии; immutable после approval.
+- Preferences сохраняются в `UserDefaults` (не secret; API key — только в
+  Keychain).
+- Терминал показывает canonical значения, подтверждённые gateway, напр.
+  `DeepSeek V4 Flash · Thinking High`.
+- Нет `Medium` в UI; значения `low|high|max` — только для thinking enabled.
+- QR остаётся `dsremote://pair?v=1&code=XXXXXX` (без настроек).
 
 ## Manual pairing flow (fallback)
 

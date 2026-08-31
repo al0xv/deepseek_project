@@ -9,8 +9,9 @@ import (
 
 	"deepseek-terminal/internal/client"
 	"deepseek-terminal/internal/gateway"
-	"deepseek-terminal/internal/provider/mock"
 	"deepseek-terminal/internal/protocol"
+	"deepseek-terminal/internal/provider"
+	"deepseek-terminal/internal/provider/mock"
 	"deepseek-terminal/internal/session"
 )
 
@@ -60,7 +61,7 @@ func TestGatewayOverLANIPv4(t *testing.T) {
 	gatewayURL := "http://" + ip + ":" + strconv.Itoa(port)
 	g := gateway.New(gateway.Config{
 		Provider:   &mock.Provider{},
-		Model:      "deepseek-chat",
+		Model:      string(provider.ModelV4Flash),
 		Manager:    mgr,
 		GatewayURL: gatewayURL,
 	})

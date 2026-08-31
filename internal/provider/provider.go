@@ -25,8 +25,10 @@ const (
 
 // CompletionRequest describes one completion call.
 type CompletionRequest struct {
-	Model    string    `json:"model"`
-	Messages []Message `json:"messages"`
+	// Settings are the validated per-session generation settings. A zero value
+	// falls back to DefaultGenerationSettings in the provider.
+	Settings GenerationSettings `json:"-"`
+	Messages []Message          `json:"messages"`
 }
 
 // CompletionResult is the accumulated text of a streamed completion.

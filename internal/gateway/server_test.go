@@ -22,7 +22,7 @@ func newGatewayServer(t *testing.T, p provider.Provider, mgrCfg session.Config) 
 	mgr := session.New(mgrCfg)
 	g := New(Config{
 		Provider:   p,
-		Model:      "deepseek-chat",
+		Model:      string(provider.ModelV4Flash),
 		Manager:    mgr,
 		GatewayURL: "http://gw.local",
 	})
@@ -189,7 +189,7 @@ func TestDisconnectDestroysSession(t *testing.T) {
 	}()
 
 	time.Sleep(100 * time.Millisecond) // let the generation start
-	cancel()                            // simulate client disconnect
+	cancel()                           // simulate client disconnect
 	<-done
 
 	deadline := time.Now().Add(2 * time.Second)
@@ -303,6 +303,124 @@ func TestEndSessionWrongToken(t *testing.T) {
 	}
 }
 
+func approveRawJSON(t *testing.T, baseURL, code, model, effort string, thinking *bool) *http.Response {
+	t.Helper()
+	req := map[string]any{"pairing_code": protocol.NormalizePairCode(code)}
+	if model != "" {
+		req["model"] = model
+	}
+	if thinking != nil {
+		req["thinking"] = *thinking
+	}
+	if effort != "" {
+		req["reasoning_effort"] = effort
+	}
+	payload, _ := json.Marshal(req)
+	resp, err := http.Post(baseURL+"/v1/pair", "application/json", bytes.NewReader(payload))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return resp
+}
+
+func TestApproveWithSettingsAndStatusMetadata(t *testing.T) {
+	_, gc, _ := newTestGateway(t, session.Config{})
+	sess, err := gc.CreateSession()
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp := approveRawJSON(t, gc.BaseURL, sess.PairingCode, "deepseek-v4-flash", "high", boolPtr(true))
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("status = %d", resp.StatusCode)
+	}
+
+	st, err := gc.StatusDetails(sess.SessionID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if st.Model != "deepseek-v4-flash" {
+		t.Fatalf("model = %q", st.Model)
+	}
+	if st.ThinkingEnabled == nil || !*st.ThinkingEnabled {
+		t.Fatalf("thinking_enabled = %v, want true", st.ThinkingEnabled)
+	}
+	if st.ReasoningEffort != "high" {
+		t.Fatalf("reasoning_effort = %q", st.ReasoningEffort)
+	}
+}
+
+func TestApproveProMaxStored(t *testing.T) {
+	_, gc, _ := newTestGateway(t, session.Config{})
+	sess, err := gc.CreateSession()
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp := approveRawJSON(t, gc.BaseURL, sess.PairingCode, "deepseek-v4-pro", "max", boolPtr(true))
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("status = %d", resp.StatusCode)
+	}
+
+	st, _ := gc.StatusDetails(sess.SessionID)
+	if st.Model != "deepseek-v4-pro" || st.ReasoningEffort != "max" {
+		t.Fatalf("settings = model %q effort %q", st.Model, st.ReasoningEffort)
+	}
+}
+
+func TestApproveInvalidSettingsRejected(t *testing.T) {
+	_, gc, _ := newTestGateway(t, session.Config{})
+	sess, err := gc.CreateSession()
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp := approveRawJSON(t, gc.BaseURL, sess.PairingCode, "gpt-5", "high", boolPtr(true))
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400", resp.StatusCode)
+	}
+	var eb protocol.ErrorBody
+	_ = json.NewDecoder(resp.Body).Decode(&eb)
+	if eb.Code != protocol.ErrInvalidSettings {
+		t.Fatalf("error code = %q, want invalid_settings", eb.Code)
+	}
+
+	// Session stays WAITING and the pairing code remains usable.
+	st, err := gc.Status(sess.SessionID)
+	if err != nil || st != protocol.StateWaiting {
+		t.Fatalf("session after rejected approve = %q, %v", st, err)
+	}
+	// Valid retry succeeds (code not consumed).
+	resp2 := approveRawJSON(t, gc.BaseURL, sess.PairingCode, "deepseek-v4-flash", "high", boolPtr(true))
+	defer resp2.Body.Close()
+	if resp2.StatusCode != http.StatusOK {
+		t.Fatalf("retry status = %d", resp2.StatusCode)
+	}
+}
+
+func TestCLIApproveWithoutSettingsUsesDefaults(t *testing.T) {
+	// The `dsgateway approve` CLI posts only the pairing code.
+	_, gc, _ := newTestGateway(t, session.Config{})
+	sess, err := gc.CreateSession()
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp := approveRawJSON(t, gc.BaseURL, sess.PairingCode, "", "", nil)
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("status = %d", resp.StatusCode)
+	}
+	st, _ := gc.StatusDetails(sess.SessionID)
+	if st.Model != "deepseek-v4-flash" || st.ReasoningEffort != "high" {
+		t.Fatalf("defaults = model %q effort %q", st.Model, st.ReasoningEffort)
+	}
+	if st.ThinkingEnabled == nil || !*st.ThinkingEnabled {
+		t.Fatalf("defaults must have thinking enabled")
+	}
+}
+
+func boolPtr(b bool) *bool { return &b }
+
 func TestEndSessionMissingToken(t *testing.T) {
 	_, gc, _ := newTestGateway(t, session.Config{})
 	sess, err := gc.CreateSession()
@@ -352,4 +470,3 @@ func TestEndSessionOnceOnly(t *testing.T) {
 		t.Fatalf("second end status = %d, want 404", del2.StatusCode)
 	}
 }
-

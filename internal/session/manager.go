@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"deepseek-terminal/internal/crypto"
-	"deepseek-terminal/internal/provider"
 	"deepseek-terminal/internal/protocol"
+	"deepseek-terminal/internal/provider"
 )
 
 // Clock abstracts time so tests can control it.
@@ -136,8 +136,15 @@ func (m *Manager) Status(id string) (protocol.SessionState, error) {
 	return s.State, nil
 }
 
-// ApproveByToken approves a session using the long pairing token from the QR.
+// ApproveByToken approves a session using the long pairing token from the QR,
+// applying the default generation settings.
 func (m *Manager) ApproveByToken(token string) (*Session, error) {
+	return m.ApproveByTokenWithSettings(token, provider.DefaultGenerationSettings())
+}
+
+// ApproveByTokenWithSettings approves a session with explicit generation
+// settings. Invalid settings are rejected and the session stays WAITING.
+func (m *Manager) ApproveByTokenWithSettings(token string, settings provider.GenerationSettings) (*Session, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	var s *Session
@@ -153,21 +160,28 @@ func (m *Manager) ApproveByToken(token string) (*Session, error) {
 	if s == nil {
 		return nil, ErrNotFound
 	}
-	return m.approve(s)
+	return m.approve(s, settings)
 }
 
-// ApproveByCode approves a session using the 6-digit pairing code.
+// ApproveByCode approves a session using the 6-digit pairing code, applying
+// the default generation settings.
 func (m *Manager) ApproveByCode(code string) (*Session, error) {
+	return m.ApproveByCodeWithSettings(code, provider.DefaultGenerationSettings())
+}
+
+// ApproveByCodeWithSettings approves a session with explicit generation
+// settings. Invalid settings are rejected and the session stays WAITING.
+func (m *Manager) ApproveByCodeWithSettings(code string, settings provider.GenerationSettings) (*Session, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	s := m.byPairCode[code]
 	if s == nil {
 		return nil, ErrNotFound
 	}
-	return m.approve(s)
+	return m.approve(s, settings)
 }
 
-func (m *Manager) approve(s *Session) (*Session, error) {
+func (m *Manager) approve(s *Session, settings provider.GenerationSettings) (*Session, error) {
 	now := m.cfg.Clock.Now()
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -177,13 +191,30 @@ func (m *Manager) approve(s *Session) (*Session, error) {
 	if s.State != protocol.StateWaiting {
 		return nil, ErrAlreadyApproved
 	}
+	if !settings.Valid() {
+		return nil, ErrInvalidSettings
+	}
 	tok, err := crypto.NewToken()
 	if err != nil {
 		return nil, err
 	}
 	s.ControlToken = tok
+	s.Settings = settings
 	s.State = protocol.StateApproved
 	return s, nil
+}
+
+// SessionSettings returns the approved generation settings for the session.
+func (m *Manager) SessionSettings(id string) (provider.GenerationSettings, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	s, ok := m.sessions[id]
+	if !ok {
+		return provider.GenerationSettings{}, ErrNotFound
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.Settings, nil
 }
 
 // ControlToken returns the control token issued to the approving controller.
@@ -334,6 +365,7 @@ func (m *Manager) destroyLocked(id string) {
 	s.History = nil
 	s.APIKey = ""
 	s.ControlToken = ""
+	s.Settings = provider.GenerationSettings{}
 	s.PairToken = ""
 	s.genCancel = nil
 	code := s.PairCode
@@ -385,4 +417,3 @@ func (m *Manager) StartSweeper(ctx context.Context) {
 		}
 	}()
 }
-

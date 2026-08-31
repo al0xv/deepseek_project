@@ -14,6 +14,8 @@ final class AppViewModel: ObservableObject {
     @Published var apiKey: String = ""
     @Published var errorMessage: String?
     @Published var isApproving = false
+    @Published var selectedModel: DeepSeekModel
+    @Published var selectedThinking: ThinkingMode
 
     private let client: GatewayClientProtocol
     private let biometrics: BiometricAuthenticating
@@ -21,6 +23,9 @@ final class AppViewModel: ObservableObject {
     private let defaults: UserDefaults
     /// Guards against re-approving the same scanned QR (duplicate frames).
     private var lastQRProcessed: String?
+
+    private static let modelPrefKey = "selectedModel"
+    private static let thinkingPrefKey = "selectedThinking"
 
     init(client: GatewayClientProtocol = GatewayClient(),
          biometrics: BiometricAuthenticating = BiometricAuthenticator(),
@@ -33,6 +38,10 @@ final class AppViewModel: ObservableObject {
         let savedURL = defaults.string(forKey: "gatewayURL") ?? ""
         self.gatewayURLString = savedURL
         self.apiKey = keychain.loadAPIKey() ?? ""
+        let savedModel = defaults.string(forKey: Self.modelPrefKey).flatMap(DeepSeekModel.init(rawValue:)) ?? .flash
+        let savedThinking = defaults.string(forKey: Self.thinkingPrefKey).flatMap(ThinkingMode.init(rawValue:)) ?? .high
+        self._selectedModel = Published(initialValue: savedModel)
+        self._selectedThinking = Published(initialValue: savedThinking)
         self._phase = Published(initialValue: GatewayURLValidator.parse(savedURL) != nil ? .pairing : .setup)
     }
 
@@ -45,6 +54,18 @@ final class AppViewModel: ObservableObject {
     func prepareForScan() {
         lastQRProcessed = nil
         errorMessage = nil
+    }
+
+    // MARK: - Generation settings (persisted in UserDefaults, not secrets)
+
+    func setModel(_ model: DeepSeekModel) {
+        selectedModel = model
+        defaults.set(model.rawValue, forKey: Self.modelPrefKey)
+    }
+
+    func setThinking(_ thinking: ThinkingMode) {
+        selectedThinking = thinking
+        defaults.set(thinking.rawValue, forKey: Self.thinkingPrefKey)
     }
 
     // MARK: - Gateway configuration
@@ -118,7 +139,11 @@ final class AppViewModel: ObservableObject {
         }
         guard let url = gatewayURL else { return }
         do {
-            let session = try await client.approve(code: pairingCode, gatewayURL: url)
+            let session = try await client.approve(
+                code: pairingCode,
+                gatewayURL: url,
+                settings: GenerationSettings(model: selectedModel, thinking: selectedThinking)
+            )
             phase = .active(session)
             pairingCode = ""
             errorMessage = nil

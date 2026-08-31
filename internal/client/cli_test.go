@@ -33,14 +33,19 @@ func (f *fakeClient) CreateSession() (protocol.SessionCreateResponse, error) {
 }
 
 func (f *fakeClient) Status(id string) (protocol.SessionState, error) {
+	st, err := f.StatusDetails(id)
+	return st.State, err
+}
+
+func (f *fakeClient) StatusDetails(id string) (protocol.SessionStatusResponse, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	if len(f.states) == 0 {
-		return protocol.StateApproved, nil
+	state := protocol.StateApproved
+	if len(f.states) > 0 {
+		state = f.states[0]
+		f.states = f.states[1:]
 	}
-	st := f.states[0]
-	f.states = f.states[1:]
-	return st, nil
+	return protocol.SessionStatusResponse{SessionID: id, State: state}, nil
 }
 
 func (f *fakeClient) Prompt(ctx context.Context, id, content string, onDelta func(string) error) (string, error) {
@@ -196,5 +201,28 @@ func TestREPLInterruptDuringStreamingCancels(t *testing.T) {
 
 	if !strings.Contains(out.String(), "[cancelled]") {
 		t.Fatalf("missing [cancelled]:\n%s", out.String())
+	}
+}
+
+func TestFormatEffectiveSettings(t *testing.T) {
+	tp := func(b bool) *bool { return &b }
+	cases := []struct {
+		name string
+		st   *protocol.SessionStatusResponse
+		want string
+	}{
+		{"FlashHigh", &protocol.SessionStatusResponse{Model: "deepseek-v4-flash", ThinkingEnabled: tp(true), ReasoningEffort: "high"}, "DeepSeek V4 Flash · Thinking High"},
+		{"ProMax", &protocol.SessionStatusResponse{Model: "deepseek-v4-pro", ThinkingEnabled: tp(true), ReasoningEffort: "max"}, "DeepSeek V4 Pro · Thinking Max"},
+		{"FlashOff", &protocol.SessionStatusResponse{Model: "deepseek-v4-flash", ThinkingEnabled: tp(false), ReasoningEffort: ""}, "DeepSeek V4 Flash · Thinking Off"},
+		{"FlashLow", &protocol.SessionStatusResponse{Model: "deepseek-v4-flash", ThinkingEnabled: tp(true), ReasoningEffort: "low"}, "DeepSeek V4 Flash · Thinking Low"},
+		{"NoSettings", &protocol.SessionStatusResponse{SessionID: "s"}, ""},
+		{"Nil", nil, ""},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := formatEffectiveSettings(tc.st); got != tc.want {
+				t.Fatalf("got %q, want %q", got, tc.want)
+			}
+		})
 	}
 }

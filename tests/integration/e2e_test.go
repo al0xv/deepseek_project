@@ -4,6 +4,7 @@ package integration
 
 import (
 	"context"
+	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -12,6 +13,7 @@ import (
 	"deepseek-terminal/internal/client"
 	"deepseek-terminal/internal/gateway"
 	"deepseek-terminal/internal/protocol"
+	"deepseek-terminal/internal/provider"
 	"deepseek-terminal/internal/provider/mock"
 	"deepseek-terminal/internal/session"
 )
@@ -24,7 +26,7 @@ func newServer(t *testing.T, mp *mock.Provider) (*session.Manager, *client.Gatew
 	mgr.StartSweeper(ctx)
 	g := gateway.New(gateway.Config{
 		Provider:   mp,
-		Model:      "deepseek-chat",
+		Model:      string(provider.ModelV4Flash),
 		Manager:    mgr,
 		GatewayURL: "http://gw.local",
 	})
@@ -210,4 +212,44 @@ func TestPairingExpiryDestroysSession(t *testing.T) {
 		time.Sleep(20 * time.Millisecond)
 	}
 	t.Fatal("unapproved session was not destroyed")
+}
+
+func TestSessionSettingsFlowE2E(t *testing.T) {
+	mp := &mock.Provider{}
+	_, gc, _ := newServer(t, mp)
+
+	sess, err := gc.CreateSession()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Approve with Pro/Max via a raw POST (as the iPhone would).
+	payload := `{"pairing_code":"` + protocol.NormalizePairCode(sess.PairingCode) +
+		`","model":"deepseek-v4-pro","thinking":true,"reasoning_effort":"max"}`
+	resp, err := http.Post(gc.BaseURL+"/v1/pair", "application/json", strings.NewReader(payload))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("approve status = %d", resp.StatusCode)
+	}
+	resp.Body.Close()
+
+	// Status returns the canonical settings.
+	st, err := gc.StatusDetails(sess.SessionID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if st.Model != "deepseek-v4-pro" || st.ReasoningEffort != "max" {
+		t.Fatalf("status settings = model %q effort %q", st.Model, st.ReasoningEffort)
+	}
+
+	// The mock provider must receive the approved settings in the request.
+	if _, err := gc.Prompt(context.Background(), sess.SessionID, "hello", nil); err != nil {
+		t.Fatal(err)
+	}
+	got := mp.LastRequest().Settings
+	if got.Model != provider.ModelV4Pro || got.ReasoningEffort != provider.ReasoningMax || !got.ThinkingEnabled {
+		t.Fatalf("provider received settings %+v, want Pro/Max", got)
+	}
 }

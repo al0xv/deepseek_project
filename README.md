@@ -16,8 +16,23 @@
 | Real iPhone Face ID verification | **PASS** (физический iPhone) |
 | Real iPhone approval flow | **PASS** (физический iPhone) |
 | Real iPhone End Session | **PASS** (физический iPhone) |
+| Real DeepSeek API verification | **PASS** (реальный платный запрос) |
+| Real DeepSeek streaming | **PASS** |
+| Real DeepSeek multi-turn | **PASS** |
+| Real iPhone + DeepSeek control flow | **PASS** |
 | Real Windows verification | `AWAITING REAL WINDOWS VERIFICATION` |
-| Real DeepSeek API verification | `AWAITING REAL DEEPSEEK API VERIFICATION` |
+
+## Product defaults (per-session)
+
+- **Model:** DeepSeek V4 Flash (`deepseek-v4-flash`)
+- **Thinking:** enabled
+- **Reasoning effort:** high
+
+Доступны: V4 Flash / V4 Pro; Thinking Off / Low / High / Max. Настройки
+выбираются на iPhone перед approve, живут в RAM сессии, immutable после
+approval и показываются терминалом как
+`DeepSeek V4 Flash · Thinking High`. `DS_MODEL` остаётся dev-override для
+default-модели gateway (если iPhone не указал модель).
 
 ## Known fixed bug
 
@@ -203,6 +218,23 @@ DS Remote → Gateway = `http://<MAC_LAN_IP>:8080` → **Scan QR** → Face ID �
 Второй ход: `А какой был мой предыдущий вопрос?` — модель показывает
 multi-turn контекст. Затем на iPhone **End Session** → следующий prompt в
 терминале: `Error: not_found: session not found`.
+
+### Настройки модели (Test A–D)
+
+Выбираются на iPhone на экране Pairing (Model / Thinking) перед Scan QR.
+Терминал показывает canonical значения после `✓ Approved`.
+
+- **Test A — Flash / High** (default): терминал
+  `DeepSeek V4 Flash · Thinking High`. Prompt: `Ответь одним словом: FLASH`
+  → реальный ответ DeepSeek.
+- **Test B — Flash / Off**: новая сессия, терминал
+  `DeepSeek V4 Flash · Thinking Off`; реальный API работает.
+- **Test C — Pro / High**: новая сессия, терминал
+  `DeepSeek V4 Pro · Thinking High`; один короткий prompt (экономия cost).
+- **Test D — Multi-turn** на Flash/High: два хода — контекст сохраняется.
+
+> Правило cost: автоматические тесты не ходят в платный API (используют
+> mock HTTP server); ручная проверка — только короткими prompt'ами.
 
 ## Переменные окружения
 

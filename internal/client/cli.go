@@ -61,7 +61,8 @@ func (r *REPL) Run(ctx context.Context, sig chan os.Signal) error {
 	fmt.Fprintf(r.out, "Waiting for approval... (expires in %ds)\n", sess.ExpiresIn)
 
 	// 3. Wait for approval.
-	if err := r.waitApproved(ctx, sig); err != nil {
+	approved, err := r.waitApproved(ctx, sig)
+	if err != nil {
 		_ = r.client.Close(r.sess.SessionID)
 		fmt.Fprintln(r.out)
 		fmt.Fprintf(r.out, "%v\n", err)
@@ -71,6 +72,10 @@ func (r *REPL) Run(ctx context.Context, sig chan os.Signal) error {
 
 	fmt.Fprintln(r.out)
 	fmt.Fprintln(r.out, "✓ Approved")
+	if line := formatEffectiveSettings(approved); line != "" {
+		fmt.Fprintln(r.out)
+		fmt.Fprintln(r.out, line)
+	}
 	fmt.Fprintln(r.out)
 	fmt.Fprintln(r.out, "DeepSeek ready.")
 	fmt.Fprintln(r.out)
@@ -127,31 +132,55 @@ func (r *REPL) Run(ctx context.Context, sig chan os.Signal) error {
 	}
 }
 
-func (r *REPL) waitApproved(ctx context.Context, sig chan os.Signal) error {
+func (r *REPL) waitApproved(ctx context.Context, sig chan os.Signal) (*protocol.SessionStatusResponse, error) {
 	deadline := time.Now().Add(time.Duration(r.sess.ExpiresIn) * time.Second)
 	ticker := time.NewTicker(500 * time.Millisecond)
 	defer ticker.Stop()
 	for {
 		select {
 		case <-ctx.Done():
-			return fmt.Errorf("cancelled")
+			return nil, fmt.Errorf("cancelled")
 		case <-sig:
-			return fmt.Errorf("cancelled by user")
+			return nil, fmt.Errorf("cancelled by user")
 		case <-ticker.C:
-			state, err := r.client.Status(r.sess.SessionID)
+			st, err := r.client.StatusDetails(r.sess.SessionID)
 			if err == nil {
-				switch state {
+				switch st.State {
 				case protocol.StateApproved:
-					return nil
+					return &st, nil
 				case protocol.StateDestroyed:
-					return fmt.Errorf("session destroyed")
+					return nil, fmt.Errorf("session destroyed")
 				}
 			}
 			if time.Now().After(deadline) {
-				return fmt.Errorf("pairing expired")
+				return nil, fmt.Errorf("pairing expired")
 			}
 		}
 	}
+}
+
+// formatEffectiveSettings renders the canonical gateway-validated settings of
+// an approved session for display, e.g. "DeepSeek V4 Flash · Thinking High".
+func formatEffectiveSettings(st *protocol.SessionStatusResponse) string {
+	if st == nil || st.Model == "" {
+		return ""
+	}
+	modelName := "DeepSeek V4 Flash"
+	if st.Model == "deepseek-v4-pro" {
+		modelName = "DeepSeek V4 Pro"
+	}
+	thinking := "Off"
+	if st.ThinkingEnabled != nil && *st.ThinkingEnabled {
+		switch st.ReasoningEffort {
+		case "low":
+			thinking = "Low"
+		case "max":
+			thinking = "Max"
+		default:
+			thinking = "High"
+		}
+	}
+	return modelName + " · Thinking " + thinking
 }
 
 func (r *REPL) doPrompt(ctx context.Context, content string) {

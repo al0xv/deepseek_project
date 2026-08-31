@@ -30,9 +30,15 @@ type SessionCreateResponse struct {
 }
 
 // SessionStatusResponse is returned by GET /v1/sessions/{id}.
+// Model/ThinkingEnabled/ReasoningEffort are the canonical effective settings
+// of an approved session (validated by the gateway), for display by the
+// terminal client.
 type SessionStatusResponse struct {
-	SessionID string       `json:"session_id"`
-	State     SessionState `json:"state"`
+	SessionID       string       `json:"session_id"`
+	State           SessionState `json:"state"`
+	Model           string       `json:"model,omitempty"`
+	ThinkingEnabled *bool        `json:"thinking_enabled,omitempty"`
+	ReasoningEffort string       `json:"reasoning_effort,omitempty"`
 }
 
 // PromptRequest is POSTed to /v1/sessions/{id}/prompt.
@@ -68,6 +74,7 @@ const (
 	ErrNotApproved     = "not_approved"
 	ErrBadRequest      = "bad_request"
 	ErrUnauthorized    = "unauthorized"
+	ErrInvalidSettings = "invalid_settings"
 )
 
 // ErrorBody is the JSON body of non-200 HTTP responses.
@@ -78,11 +85,15 @@ type ErrorBody struct {
 
 // ApproveRequest is POSTed to /v1/pair. Either PairingToken (from the QR
 // code) or PairingCode (typed fallback) must be set. APIKey is reserved for
-// the future iOS controller (MVP3).
+// the future iOS controller (MVP3). Model/Thinking/ReasoningEffort are
+// optional; empty fields fall back to the gateway defaults.
 type ApproveRequest struct {
-	PairingToken string `json:"pairing_token,omitempty"`
-	PairingCode  string `json:"pairing_code,omitempty"`
-	APIKey       string `json:"api_key,omitempty"`
+	PairingToken    string `json:"pairing_token,omitempty"`
+	PairingCode     string `json:"pairing_code,omitempty"`
+	APIKey          string `json:"api_key,omitempty"`
+	Model           string `json:"model,omitempty"`
+	Thinking        *bool  `json:"thinking,omitempty"`
+	ReasoningEffort string `json:"reasoning_effort,omitempty"`
 }
 
 // ApproveResponse is returned by POST /v1/pair.

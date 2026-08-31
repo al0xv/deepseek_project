@@ -24,6 +24,7 @@ var errStopReading = errors.New("stop reading")
 type Client interface {
 	CreateSession() (protocol.SessionCreateResponse, error)
 	Status(id string) (protocol.SessionState, error)
+	StatusDetails(id string) (protocol.SessionStatusResponse, error)
 	Prompt(ctx context.Context, id, content string, onDelta func(string) error) (string, error)
 	Cancel(id string) error
 	Close(id string) error
@@ -60,12 +61,19 @@ func (c *GatewayClient) CreateSession() (protocol.SessionCreateResponse, error) 
 
 // Status implements Client.
 func (c *GatewayClient) Status(id string) (protocol.SessionState, error) {
-	var out protocol.SessionStatusResponse
-	err := c.doJSON(http.MethodGet, "/v1/sessions/"+id, nil, http.StatusOK, &out)
+	st, err := c.StatusDetails(id)
 	if err != nil {
 		return "", err
 	}
-	return out.State, nil
+	return st.State, nil
+}
+
+// StatusDetails implements Client: full session status including the
+// canonical effective generation settings of an approved session.
+func (c *GatewayClient) StatusDetails(id string) (protocol.SessionStatusResponse, error) {
+	var out protocol.SessionStatusResponse
+	err := c.doJSON(http.MethodGet, "/v1/sessions/"+id, nil, http.StatusOK, &out)
+	return out, err
 }
 
 // Prompt implements Client. It streams token deltas to onDelta and returns

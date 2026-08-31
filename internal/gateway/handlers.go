@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"deepseek-terminal/internal/provider"
 	"deepseek-terminal/internal/protocol"
+	"deepseek-terminal/internal/provider"
 	"deepseek-terminal/internal/session"
 )
 
@@ -46,15 +46,18 @@ func (g *Gateway) handleApprove(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var (
-		s   *session.Session
-		err error
-	)
+	settings, err := provider.ParseSettings(provider.Model(g.model), req.Model, req.Thinking, req.ReasoningEffort)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, protocol.ErrInvalidSettings, err.Error())
+		return
+	}
+
+	var s *session.Session
 	switch {
 	case req.PairingToken != "":
-		s, err = g.mgr.ApproveByToken(req.PairingToken)
+		s, err = g.mgr.ApproveByTokenWithSettings(req.PairingToken, settings)
 	case req.PairingCode != "":
-		s, err = g.mgr.ApproveByCode(protocol.NormalizePairCode(req.PairingCode))
+		s, err = g.mgr.ApproveByCodeWithSettings(protocol.NormalizePairCode(req.PairingCode), settings)
 	default:
 		writeError(w, http.StatusBadRequest, protocol.ErrBadRequest, "pairing_token or pairing_code required")
 		return
@@ -69,6 +72,9 @@ func (g *Gateway) handleApprove(w http.ResponseWriter, r *http.Request) {
 		return
 	case errors.Is(err, session.ErrAlreadyApproved):
 		writeError(w, http.StatusConflict, protocol.ErrAlreadyPaired, "session already approved")
+		return
+	case errors.Is(err, session.ErrInvalidSettings):
+		writeError(w, http.StatusBadRequest, protocol.ErrInvalidSettings, err.Error())
 		return
 	case err != nil:
 		writeError(w, http.StatusInternalServerError, protocol.ErrUpstream, err.Error())
@@ -95,7 +101,14 @@ func (g *Gateway) handleStatus(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, protocol.ErrNotFound, "session not found")
 		return
 	}
-	writeJSON(w, http.StatusOK, protocol.SessionStatusResponse{SessionID: id, State: state})
+	resp := protocol.SessionStatusResponse{SessionID: id, State: state}
+	if settings, err := g.mgr.SessionSettings(id); err == nil && settings.Model != "" {
+		resp.Model = string(settings.Model)
+		t := settings.ThinkingEnabled
+		resp.ThinkingEnabled = &t
+		resp.ReasoningEffort = string(settings.ReasoningEffort)
+	}
+	writeJSON(w, http.StatusOK, resp)
 }
 
 func (g *Gateway) handleClose(w http.ResponseWriter, r *http.Request) {
@@ -186,7 +199,6 @@ func (g *Gateway) handlePrompt(w http.ResponseWriter, r *http.Request) {
 	g.streamPrompt(w, r, id, history)
 }
 
-
 // streamPrompt writes the SSE response for one prompt. It owns the generation
 // context: a separate /cancel request or a client disconnect both cancel it.
 func (g *Gateway) streamPrompt(w http.ResponseWriter, r *http.Request, id string, history []provider.Message) {
@@ -223,8 +235,9 @@ func (g *Gateway) streamPrompt(w http.ResponseWriter, r *http.Request, id string
 		return nil
 	}
 
+	settings, _ := g.mgr.SessionSettings(id)
 	result, err := g.provider.StreamCompletion(ctx, provider.CompletionRequest{
-		Model:    g.model,
+		Settings: settings,
 		Messages: history,
 	}, onDelta)
 	close(watchDone)

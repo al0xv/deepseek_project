@@ -17,7 +17,7 @@ import (
 
 const (
 	defaultBaseURL = "https://api.deepseek.com"
-	defaultModel   = "deepseek-chat"
+	defaultModel   = provider.ModelV4Flash
 )
 
 // Client streams chat completions from the DeepSeek API.
@@ -33,15 +33,22 @@ func New(apiKey string) *Client {
 	return &Client{
 		APIKey:  apiKey,
 		BaseURL: defaultBaseURL,
-		Model:   defaultModel,
+		Model:   string(defaultModel),
 		HTTP:    &http.Client{},
 	}
 }
 
 type chatCompletionRequest struct {
-	Model    string             `json:"model"`
-	Messages []provider.Message `json:"messages"`
-	Stream   bool               `json:"stream"`
+	Model           string             `json:"model"`
+	Messages        []provider.Message `json:"messages"`
+	Stream          bool               `json:"stream"`
+	Thinking        *thinkingConfig    `json:"thinking,omitempty"`
+	ReasoningEffort string             `json:"reasoning_effort,omitempty"`
+}
+
+// thinkingConfig maps to the DeepSeek thinking parameter.
+type thinkingConfig struct {
+	Type string `json:"type"` // "enabled" | "disabled"
 }
 
 // streamChunk mirrors one SSE data chunk of the OpenAI-compatible API.
@@ -56,11 +63,31 @@ type streamChunk struct {
 
 // StreamCompletion implements provider.Provider.
 func (c *Client) StreamCompletion(ctx context.Context, req provider.CompletionRequest, onDelta func(delta string) error) (provider.CompletionResult, error) {
-	model := c.Model
-	if model == "" {
-		model = defaultModel
+	settings := req.Settings
+	if settings.Model == "" {
+		settings = provider.DefaultGenerationSettings()
+		if m := provider.Model(c.Model); m != "" {
+			settings.Model = m
+		}
 	}
-	payload, err := json.Marshal(chatCompletionRequest{Model: model, Messages: req.Messages, Stream: true})
+	if !settings.Valid() {
+		// Never send an unvalidated model/effort combination upstream.
+		settings = provider.DefaultGenerationSettings()
+	}
+
+	body := chatCompletionRequest{
+		Model:           string(settings.Model),
+		Messages:        req.Messages,
+		Stream:          true,
+		Thinking:        &thinkingConfig{Type: "enabled"},
+		ReasoningEffort: string(settings.ReasoningEffort),
+	}
+	if !settings.ThinkingEnabled {
+		body.Thinking.Type = "disabled"
+		body.ReasoningEffort = ""
+	}
+
+	payload, err := json.Marshal(body)
 	if err != nil {
 		return provider.CompletionResult{}, fmt.Errorf("deepseek: marshal request: %w", err)
 	}

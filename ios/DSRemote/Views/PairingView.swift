@@ -23,6 +23,28 @@ struct PairingView: View {
                     }
                 }
             }
+            Section(header: Text("Model")) {
+                Picker("Model", selection: Binding(
+                    get: { viewModel.selectedModel },
+                    set: { viewModel.setModel($0) }
+                )) {
+                    ForEach(DeepSeekModel.allCases) { model in
+                        Text(model.displayName).tag(model)
+                    }
+                }
+                .pickerStyle(.menu)
+            }
+            Section(header: Text("Thinking")) {
+                Picker("Thinking", selection: Binding(
+                    get: { viewModel.selectedThinking },
+                    set: { viewModel.setThinking($0) }
+                )) {
+                    ForEach(ThinkingMode.allCases) { mode in
+                        Text(mode.displayName).tag(mode)
+                    }
+                }
+                .pickerStyle(.menu)
+            }
             Section {
                 Button {
                     startScanning()

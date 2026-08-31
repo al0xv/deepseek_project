@@ -27,9 +27,11 @@ final class FakeGatewayClient: GatewayClientProtocol {
     private(set) var approveCount = 0
     private(set) var endCount = 0
     private(set) var lastEndToken: String?
+    private(set) var lastApproveSettings: GenerationSettings?
 
-    func approve(code: String, gatewayURL: URL) async throws -> ControlSession {
+    func approve(code: String, gatewayURL: URL, settings: GenerationSettings) async throws -> ControlSession {
         approveCount += 1
+        lastApproveSettings = settings
         return try approveResult.get()
     }
 
@@ -206,5 +208,56 @@ final class AppViewModelTests: XCTestCase {
         await viewModel.handleScannedQR(validQR)
         XCTAssertEqual(fakeClient.approveCount, 1)
         XCTAssertEqual(viewModel.phase, .active(sampleSession))
+    }
+
+    // MARK: - Generation settings
+
+    func testDefaultSelectionIsFlashHigh() {
+        XCTAssertEqual(viewModel.selectedModel, .flash)
+        XCTAssertEqual(viewModel.selectedThinking, .high)
+    }
+
+    func testSelectedSettingsPassedForManualApprove() async {
+        fakeClient.approveResult = .success(sampleSession)
+        viewModel.setModel(.pro)
+        viewModel.setThinking(.max)
+        await viewModel.approve()
+        XCTAssertEqual(fakeClient.lastApproveSettings,
+                       GenerationSettings(model: .pro, thinking: .max))
+    }
+
+    func testSelectedSettingsPassedForQRApprove() async {
+        fakeClient.approveResult = .success(sampleSession)
+        viewModel.setModel(.flash)
+        viewModel.setThinking(.low)
+        await viewModel.handleScannedQR(validQR)
+        XCTAssertEqual(fakeClient.lastApproveSettings,
+                       GenerationSettings(model: .flash, thinking: .low))
+    }
+
+    func testBiometricFailureSendsNoApproveIncludingSettings() async {
+        fakeBiometrics.result = .failure(AppError.biometricFailed)
+        viewModel.setModel(.pro)
+        await viewModel.approve()
+        XCTAssertEqual(fakeClient.approveCount, 0)
+        XCTAssertNil(fakeClient.lastApproveSettings)
+    }
+
+    func testSettingsPersistedInUserDefaults() {
+        viewModel.setModel(.pro)
+        viewModel.setThinking(.max)
+        XCTAssertEqual(defaults.string(forKey: "selectedModel"), "deepseek-v4-pro")
+        XCTAssertEqual(defaults.string(forKey: "selectedThinking"), "max")
+    }
+
+    func testSettingsLoadedFromUserDefaults() {
+        defaults.set("deepseek-v4-pro", forKey: "selectedModel")
+        defaults.set("max", forKey: "selectedThinking")
+        let vm = AppViewModel(client: fakeClient,
+                              biometrics: fakeBiometrics,
+                              keychain: fakeKeychain,
+                              defaults: defaults)
+        XCTAssertEqual(vm.selectedModel, .pro)
+        XCTAssertEqual(vm.selectedThinking, .max)
     }
 }

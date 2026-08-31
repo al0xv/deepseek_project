@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"deepseek-terminal/internal/provider"
 	"deepseek-terminal/internal/protocol"
+	"deepseek-terminal/internal/provider"
 )
 
 // Session state aliases.
@@ -27,6 +27,7 @@ var (
 	ErrNotApproved     = errors.New("session is not approved")
 	ErrNotActive       = errors.New("no generation in flight")
 	ErrUnauthorized    = errors.New("invalid control token")
+	ErrInvalidSettings = errors.New("invalid generation settings")
 )
 
 // Session is a single terminal session. It lives entirely in memory and is
@@ -44,6 +45,9 @@ type Session struct {
 	// It is memory-only, tied to this session, never shown to the terminal
 	// client and cleared on destroy.
 	ControlToken string
+	// Settings are the per-session model/thinking parameters, immutable after
+	// approval and cleared on destroy.
+	Settings provider.GenerationSettings
 
 	mu        sync.Mutex
 	genCancel func()

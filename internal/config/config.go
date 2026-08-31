@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"os"
 	"time"
+
+	"deepseek-terminal/internal/provider"
 )
 
 // APIKey returns the DeepSeek API key from DEEPSEEK_API_KEY.
@@ -18,12 +20,12 @@ func APIKey() (string, error) {
 	return k, nil
 }
 
-// Model returns the DeepSeek model name from DS_MODEL, default "deepseek-chat".
+// Model returns the DeepSeek model name from DS_MODEL, default "deepseek-v4-flash".
 func Model() string {
 	if m := os.Getenv("DS_MODEL"); m != "" {
 		return m
 	}
-	return "deepseek-chat"
+	return string(provider.ModelV4Flash)
 }
 
 // GatewayURL returns the gateway base URL from DS_GATEWAY_URL,

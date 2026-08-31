@@ -2,7 +2,7 @@ import Foundation
 
 /// The subset of the gateway protocol the controller needs.
 protocol GatewayClientProtocol {
-    func approve(code: String, gatewayURL: URL) async throws -> ControlSession
+    func approve(code: String, gatewayURL: URL, settings: GenerationSettings) async throws -> ControlSession
     func endSession(sessionID: String, controlToken: String, gatewayURL: URL) async throws
 }
 
@@ -14,14 +14,21 @@ struct GatewayClient: GatewayClientProtocol {
         self.session = session
     }
 
-    func approve(code: String, gatewayURL: URL) async throws -> ControlSession {
+    func approve(code: String, gatewayURL: URL, settings: GenerationSettings) async throws -> ControlSession {
         guard let normalized = PairingCode.normalize(code) else {
             throw AppError.invalidPairingCode
         }
+        var payload: [String: Any] = ["pairing_code": normalized]
+        payload["model"] = settings.model.rawValue
+        payload["thinking"] = settings.thinking.thinkingEnabled
+        if let effort = settings.thinking.reasoningEffort {
+            payload["reasoning_effort"] = effort
+        }
+
         var request = URLRequest(url: Self.url(gatewayURL, path: "/v1/pair"))
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try JSONSerialization.data(withJSONObject: ["pairing_code": normalized])
+        request.httpBody = try JSONSerialization.data(withJSONObject: payload)
 
         let (data, response) = try await session.data(for: request)
         guard let http = response as? HTTPURLResponse else { throw AppError.gatewayUnavailable }

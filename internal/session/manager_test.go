@@ -309,6 +309,98 @@ func TestEndByControlTokenEmptyToken(t *testing.T) {
 	}
 }
 
+func TestApproveStoresDefaultSettings(t *testing.T) {
+	m, _ := newTestManager(time.Minute, time.Minute, 4)
+	s, _ := m.Create()
+	if _, err := m.ApproveByCode(s.PairCode); err != nil {
+		t.Fatal(err)
+	}
+	got, err := m.SessionSettings(s.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != provider.DefaultGenerationSettings() {
+		t.Fatalf("settings = %+v, want defaults", got)
+	}
+}
+
+func TestApproveStoresExplicitSettings(t *testing.T) {
+	m, _ := newTestManager(time.Minute, time.Minute, 4)
+	cases := []struct {
+		name string
+		cfg  provider.GenerationSettings
+	}{
+		{"FlashHigh", provider.GenerationSettings{Model: provider.ModelV4Flash, ThinkingEnabled: true, ReasoningEffort: provider.ReasoningHigh}},
+		{"ProMax", provider.GenerationSettings{Model: provider.ModelV4Pro, ThinkingEnabled: true, ReasoningEffort: provider.ReasoningMax}},
+		{"FlashOff", provider.GenerationSettings{Model: provider.ModelV4Flash, ThinkingEnabled: false, ReasoningEffort: ""}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			s, _ := m.Create()
+			if _, err := m.ApproveByCodeWithSettings(s.PairCode, tc.cfg); err != nil {
+				t.Fatal(err)
+			}
+			got, _ := m.SessionSettings(s.ID)
+			if got != tc.cfg {
+				t.Fatalf("settings = %+v, want %+v", got, tc.cfg)
+			}
+		})
+	}
+}
+
+func TestApproveInvalidSettingsRejectedAndRetryable(t *testing.T) {
+	m, _ := newTestManager(time.Minute, time.Minute, 4)
+	s, _ := m.Create()
+
+	bad := provider.GenerationSettings{Model: "deepseek-chat", ThinkingEnabled: true, ReasoningEffort: provider.ReasoningHigh}
+	if _, err := m.ApproveByCodeWithSettings(s.PairCode, bad); err != ErrInvalidSettings {
+		t.Fatalf("err = %v, want ErrInvalidSettings", err)
+	}
+	if st, _ := m.Status(s.ID); st != StateWaiting {
+		t.Fatalf("state = %q, want WAITING after rejected approve", st)
+	}
+
+	// The pairing code is not consumed: a valid retry still works.
+	good := provider.DefaultGenerationSettings()
+	if _, err := m.ApproveByCodeWithSettings(s.PairCode, good); err != nil {
+		t.Fatalf("retry with valid settings failed: %v", err)
+	}
+	if st, _ := m.Status(s.ID); st != StateApproved {
+		t.Fatalf("state = %q, want APPROVED", st)
+	}
+}
+
+func TestSettingsSessionIsolation(t *testing.T) {
+	m, _ := newTestManager(time.Minute, time.Minute, 4)
+	a, _ := m.Create()
+	b, _ := m.Create()
+	if _, err := m.ApproveByCodeWithSettings(a.PairCode, provider.GenerationSettings{Model: provider.ModelV4Flash, ThinkingEnabled: true, ReasoningEffort: provider.ReasoningHigh}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := m.ApproveByCodeWithSettings(b.PairCode, provider.GenerationSettings{Model: provider.ModelV4Pro, ThinkingEnabled: true, ReasoningEffort: provider.ReasoningMax}); err != nil {
+		t.Fatal(err)
+	}
+
+	gotA, _ := m.SessionSettings(a.ID)
+	gotB, _ := m.SessionSettings(b.ID)
+	if gotA.Model != provider.ModelV4Flash || gotB.Model != provider.ModelV4Pro {
+		t.Fatalf("session isolation broken: A=%+v B=%+v", gotA, gotB)
+	}
+}
+
+func TestSettingsClearedAfterDestroy(t *testing.T) {
+	m, _ := newTestManager(time.Minute, time.Minute, 4)
+	s, _ := m.Create()
+	_, _ = m.ApproveByCode(s.PairCode)
+	if s.Settings.Model == "" {
+		t.Fatal("settings not stored on session")
+	}
+	m.Destroy(s.ID)
+	if s.Settings.Model != "" {
+		t.Fatal("settings not cleared after destroy")
+	}
+}
+
 func TestEndByControlTokenCrossSession(t *testing.T) {
 	m, _ := newTestManager(time.Minute, time.Minute, 4)
 	a, _ := m.Create()
@@ -354,4 +446,3 @@ func TestControlTokenClearedAfterDestroy(t *testing.T) {
 		t.Fatal("control token not cleared after destroy")
 	}
 }
-

@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"time"
 
-	"deepseek-terminal/internal/provider"
 	"deepseek-terminal/internal/protocol"
+	"deepseek-terminal/internal/provider"
 	"deepseek-terminal/internal/session"
 )
 
@@ -38,7 +38,7 @@ type Gateway struct {
 // New returns a ready-to-serve Gateway.
 func New(cfg Config) *Gateway {
 	if cfg.Model == "" {
-		cfg.Model = "deepseek-chat"
+		cfg.Model = string(provider.ModelV4Flash)
 	}
 	if cfg.GenTimeout <= 0 {
 		cfg.GenTimeout = 60 * time.Second
