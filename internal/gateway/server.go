@@ -67,7 +67,15 @@ func (g *Gateway) Handler() http.Handler {
 	mux.HandleFunc("POST /v1/sessions/{id}/cancel", g.handleCancel)
 	mux.HandleFunc("POST /v1/sessions/{id}/close", g.handleClose)
 	mux.HandleFunc("DELETE /v1/sessions/{id}", g.handleEnd)
+	mux.HandleFunc("GET /healthz", g.handleHealth)
 	return mux
+}
+
+// handleHealth is a minimal unauthenticated health endpoint for deployment
+// verification and Caddy/uptime checks. It exposes no sessions, config,
+// environment, or credentials.
+func (g *Gateway) handleHealth(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {

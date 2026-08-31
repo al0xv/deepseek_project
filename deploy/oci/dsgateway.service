@@ -1,0 +1,23 @@
+[Unit]
+Description=DS Remote gateway (loopback only: 127.0.0.1:8080)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=dsremote
+Group=dsremote
+WorkingDirectory=/opt/dsremote
+EnvironmentFile=/etc/dsremote/gateway.env
+ExecStart=/opt/dsremote/run-gateway.sh
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=full
+ProtectKernelTunables=true
+ProtectControlGroups=true
+
+[Install]
+WantedBy=multi-user.target

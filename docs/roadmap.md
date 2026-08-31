@@ -1,8 +1,8 @@
 # Project Roadmap
 
-Статусы верификации на текущий момент: см. `README.md` (REAL IPHONE/REAL
-DEEPSEEK — PASS; REAL WINDOWS — AWAITING). Ниже — только дорожная карта;
-фазы, помеченные как будущие, **не реализованы**.
+Статусы верификации на текущий момент: см. `README.md` (REAL IPHONE /
+REAL DEEPSEEK — PASS; REAL WINDOWS — AWAITING; REAL ORACLE — AWAITING).
+Ниже — только дорожная карта; фазы, помеченные как будущие, **не реализованы**.
 
 ## Phase 3.2.1 — Model & Thinking Selection
 
@@ -40,82 +40,65 @@ Important milestone: **REAL WINDOWS VERIFICATION: PASS**.
 
 ---
 
-## Phase 3.3 — Secure API Credential Transport DESIGN
+## Phase 3.3A — Oracle Always Free Deployment Preparation
 
-IMPORTANT: не отправлять DeepSeek API key с iPhone на текущий gateway —
-текущее LAN-соединение `http://<Mac-IP>:8080` передаёт key в открытом виде,
-что неприемлемо. Фаза начинается с security design checkpoint'а.
+CURRENT PHASE (реализована — подготовка репозитория).
 
-Goal: `iPhone Keychain → authenticated encrypted channel → gateway RAM →
-DeepSeek`.
+- Linux build targets (amd64/arm64, static, `CGO_ENABLED=0`).
+- `deploy/oci/`: install.sh / deploy.sh / run-gateway.sh / dsgateway.service /
+  Caddyfile.template / README.
+- Health endpoint `GET /healthz`.
+- Первый публичный deployment — только `-mock` (без API key, без трат).
+- `dsgateway` слушает только `127.0.0.1:8080`; публичный вход — только Caddy :443.
+- Временный free hostname `sslip.io`; обычный домен позже заменяет его без
+  изменения кода gateway.
+- Cм. `deploy/oci/README.md`.
 
-Requirements:
+## Phase 3.3B — Public Oracle Mock E2E Verification
 
-- API key никогда не достигает terminal client;
-- никогда не в QR;
-- никогда в логах;
-- никогда не персистится на gateway;
-- network attacker не может прочитать key;
-- terminal PC не может обманом заставить телефон отправить key на произвольный endpoint.
+(manual; требует реальной OCI VM пользователя)
 
-Compare at least:
+Проверка публичного mock-флоу: `ds --remote https://<hostname>` → QR →
+iPhone Scan QR → Face ID → approve → `DeepSeek V4 Flash · Thinking High` →
+`mock reply to: hello` → End Session → `not_found`. Плюс negative tests
+(порт 8080 недоступен публично, wrong/expired pairing, wrong control token).
 
-A. normal HTTPS gateway with trusted certificate/domain;
-B. pinned gateway public key / certificate;
-C. authenticated application-layer encrypted transport;
-D. delay key-delivery until a public trusted HTTPS gateway exists.
-
-Do NOT implement before an explicit security decision. Prefer the likely
-simplest production choice over custom cryptography.
+Статус: `AWAITING REAL ORACLE VM VERIFICATION`.
 
 ---
 
-## Phase 3.4 — Session-scoped API Key Delivery
+## Phase 3.4 — Secure iPhone API-key Delivery over Public HTTPS
 
-Only after Phase 3.3 security design is approved.
-
-Goal: DeepSeek key permanently stored only in iPhone Keychain; during an
-approved session `iPhone → secure transport → gateway RAM → DeepSeek`; on
-destroy: clear key reference / messages / pairing credentials / control token.
-Mac env should no longer require `DEEPSEEK_API_KEY` for the normal flow.
-Development env fallback may remain.
-
----
-
-## Phase 3.5 — Public Gateway Without Buying Infrastructure First
-
-Goal: `school Windows/Mac → Internet → gateway` without requiring same LAN.
-Research FIRST; prioritize free tier / zero-cost; HTTPS; streaming;
-short-lived in-memory sessions; reasonable rate limiting; no persistent
-conversation DB; support the iPhone controller. Compare realistic current
-hosting options with up-to-date docs. If no reliable free option, quantify the
-cheapest VPS alternative before purchasing.
-
----
-
-## Phase 3.6 — Zero/Minimal Install Foreign Computer UX
-
-Original core product goal:
+Только после успешной 3.3B. Goal:
 
 ```
-approach Windows/Mac → open terminal → one short command → QR → iPhone → DeepSeek
+iPhone Keychain → HTTPS → Oracle gateway RAM → DeepSeek
 ```
 
-Investigate after public gateway exists. Preferred final UX candidate:
-`ssh dsh.example` if public SSH is clean; alternative Windows bootstrap:
-short PowerShell command; macOS: short curl command. Goals: no API key, no
-permanent config, no history, no installer if avoidable, temporary client only.
+Требования: key не достигает terminal client; не в QR; не в логах; не
+персистится на gateway; network attacker не может прочитать; terminal PC не
+может заставить телефон отправить key на произвольный endpoint. Начать с
+security decision (trusted cert vs pinning vs app-layer encryption); отдавать
+предпочтение простому production-варианту, а не самодельной криптографии.
+Mac env больше не требует `DEEPSEEK_API_KEY` в normal flow (dev fallback
+может остаться).
+
+---
+
+## Phase 3.5 — SSH terminal entrypoint / one-command UX
+
+Original product goal: `approach Windows/Mac → one short command → QR →
+iPhone → DeepSeek`. Рассмотреть `ssh dsh.example`, альтернативы Windows
+(short PowerShell) и macOS (short curl). Без API key, без постоянного
+конфига, без истории, без installer если возможно, temporary client only.
 Windows #1, macOS #2, Linux out of scope.
 
 ---
 
-## Phase 3.7 — Session UX Polish
+## Phase 3.6 — Final hostname / no-install UX polish
 
-Only after connectivity architecture is stable. Potential optional features:
-session timer; selected model shown on phone/terminal; End Session improvement;
-immediate terminal notification when iPhone kills session; optional
-cost/tokens for current session; optional max-session-duration control;
-clearer offline/errors.
+Замена `sslip.io` на постоянный hostname; полировка one-command bootstrap и
+no-install UX.
 
 ---
 
@@ -134,5 +117,6 @@ REAL MAC / REAL DEEPSEEK — PASS.
 
 Codex clone; shell execution; arbitrary local commands; filesystem read/write;
 git; VS Code extension; remote Mac control; coding-agent tools; voice control;
-chat sync/history; Android; Linux. Evaluate only after the basic
-temporary-terminal product is genuinely useful.
+chat sync/history; Android; Linux end-user support (Linux — server-only).
+Evaluate only after the basic temporary-terminal product is genuinely useful.
+

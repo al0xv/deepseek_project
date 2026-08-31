@@ -236,6 +236,26 @@ multi-turn контекст. Затем на iPhone **End Session** → след
 > Правило cost: автоматические тесты не ходят в платный API (используют
 > mock HTTP server); ручная проверка — только короткими prompt'ами.
 
+## Oracle Always Free deployment
+
+Публичное развёртывание `dsgateway` на одной Oracle Cloud Always Free VM
+(тестовый, **mock-only**, без API key) — см. **`deploy/oci/README.md`**.
+
+Кратко:
+
+```bash
+make build-linux            # bin/dsgateway-linux-amd64 / -arm64
+./deploy/oci/deploy.sh \
+  --ip 129.146.10.25 \
+  --ssh-host 129.146.10.25 \
+  --ssh-key ~/.ssh/dsh_oracle \
+  --arch amd64
+```
+
+Схема: `ds / iPhone → HTTPS :443 → Caddy → 127.0.0.1:8080 → dsgateway -mock`.
+Порт `8080` публично **не** открывается. Временный hostname — `sslip.io`.
+`Local development` (выше) остаётся без изменений.
+
 ## Переменные окружения
 
 | Переменная | Значение по умолчанию | Описание |

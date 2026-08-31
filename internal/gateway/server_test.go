@@ -470,3 +470,32 @@ func TestEndSessionOnceOnly(t *testing.T) {
 		t.Fatalf("second end status = %d, want 404", del2.StatusCode)
 	}
 }
+
+func TestHealthEndpoint(t *testing.T) {
+	_, gc, _ := newTestGateway(t, session.Config{})
+
+	resp, err := http.Get(gc.BaseURL + "/healthz")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("status = %d, want 200", resp.StatusCode)
+	}
+	var body map[string]string
+	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+		t.Fatal(err)
+	}
+	if body["status"] != "ok" {
+		t.Fatalf("body = %v, want status ok", body)
+	}
+	// Health must not expose any session/config/credential fields.
+	for _, forbidden := range []string{"session", "config", "key", "token", "model", "env"} {
+		for k := range body {
+			if k == forbidden {
+				t.Fatalf("health leaked field %q", k)
+			}
+		}
+	}
+}
+
