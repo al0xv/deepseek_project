@@ -117,9 +117,10 @@ DeepSeek API Key
 - API key сохраняется **только** в iOS Keychain (`KeychainStore` через
   `SecItem*`). Никогда в UserDefaults, никогда в `print()`/логах.
 
-> В Phase 3.1 ключ хранится и управляется, но в approve-запрос не
-> передаётся: gateway работает с `-mock`, а session-scoped доставка key —
-> Phase 3.3.
+> **Stub (Phase 3.4):** ключ хранится и управляется только в Keychain, но в
+> approve-запрос **не передаётся** (gateway отклоняет `api_key` как
+> `not_implemented`, `501`). Рабочий способ сегодня: `DEEPSEEK_API_KEY` на
+> gateway (или `-mock`).
 
 ## Model & Thinking selection
 
@@ -217,7 +218,8 @@ dsremote://pair?v=1&code=472913
 ## Известные ограничения (Phase 3.2)
 
 - Нет chat UI на iPhone, нет push/background, нет session-scoped DeepSeek key
-  delivery (Phase 3.3) — approve работает с mock-провайдером.
+  delivery (Phase 3.4 — stub) — approve работает с ключом gateway или
+  mock-провайдером.
 - Терминал не получает активного уведомления об End Session (нет push):
   он видит завершение при следующем prompt (`not_found`).
 - Для запуска на физическом iPhone нужно выбрать Team в Xcode (Signing &

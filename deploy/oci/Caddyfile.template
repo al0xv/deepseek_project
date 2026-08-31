@@ -1,5 +1,5 @@
 # DS Remote public HTTPS gateway.
-# {{HOSTNAME}} is replaced at install time, e.g. 129-146-10-25.sslip.io.
+# {{HOSTNAME}} is replaced at install time, e.g. 203-0-113-42.sslip.io.
 # Caddy terminates TLS (Let's Encrypt) and reverse-proxies to the
 # loopback-only gateway. Streaming (SSE) is preserved by Caddy's default
 # reverse_proxy behavior; no buffering middleware is added.

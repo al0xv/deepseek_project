@@ -1,26 +1,45 @@
 # DeepSeek Terminal
 
-Личный инструмент для временного интерактивного чата с DeepSeek из терминала
-чужого Windows/macOS компьютера. API key никогда не покидает доверенное
-устройство. История живёт только в RAM и уничтожается вместе с сессией.
+Временный интерактивный чат с DeepSeek из терминала любого Windows/macOS
+компьютера, подтверждаемый с вашего iPhone (сканирование QR + Face ID).
+**DeepSeek API key никогда не покидает доверенное устройство** и не попадает
+в RAM чужого ПК, его shell history, логи или файлы. История сессии живёт
+только в RAM gateway и уничтожается вместе с сессией — никакой БД, никакого
+persistence.
 
-Статус: **MVP0–MVP2 + Phase 2.4 + Phase 3.1 + Phase 3.2 реализованы**.
+- **`ds`** — терминальный клиент (не знает API key, ничего не сохраняет).
+- **`dsgateway`** — gateway: единственный компонент, который держит API key.
+- **DS Remote (iOS)** — контроллер: сканирует QR, подтверждает Face ID,
+  завершает сессию (End Session).
 
-## Verification status
+## Стадия проекта
 
-| Check | Status |
-|-------|--------|
-| Go build/vet/test | PASS (автоматически, каждый этап) |
-| Windows amd64 cross-build | PASS (автоматически) |
-| Real iPhone QR verification | **PASS** (физический iPhone) |
-| Real iPhone Face ID verification | **PASS** (физический iPhone) |
-| Real iPhone approval flow | **PASS** (физический iPhone) |
-| Real iPhone End Session | **PASS** (физический iPhone) |
-| Real DeepSeek API verification | **PASS** (реальный платный запрос) |
-| Real DeepSeek streaming | **PASS** |
-| Real DeepSeek multi-turn | **PASS** |
+Реализовано и проверено: **MVP0–MVP2, Phase 2.4, Phase 3.1, Phase 3.2,
+Phase 3.2.1, Phase 3.3A** (см. `docs/roadmap.md`).
+
+| Проверка | Статус |
+|----------|--------|
+| Go build / vet / test | **PASS** (автоматически, каждый этап) |
+| Windows amd64 cross-build | **PASS** (автоматически) |
+| Linux amd64/arm64 static build | **PASS** (автоматически) |
+| iOS unit tests (simulator) | **PASS** (автоматически) |
+| Real iPhone QR / Face ID / approve / End Session | **PASS** (физический iPhone) |
+| Real DeepSeek API / streaming / multi-turn | **PASS** (реальный платный запрос) |
 | Real iPhone + DeepSeek control flow | **PASS** |
-| Real Windows verification | `AWAITING REAL WINDOWS VERIFICATION` |
+| Real Windows machine test | `AWAITING` (бинарь собран, ручная проверка не проведена) |
+| Public Oracle VM mock E2E (Phase 3.3B) | `AWAITING` (нужна реальная VM) |
+
+### Явные заглушки (stub) — не работают намеренно
+
+| Функция | Фаза | Поведение сегодня |
+|---------|------|-------------------|
+| Доставка session-scoped DeepSeek API key с iPhone в gateway | Phase 3.4 | iOS хранит ключ только в Keychain и **не отправляет** его; gateway возвращает **`501 not_implemented`** на любой `api_key` в `/v1/pair`. Рабочий способ: `DEEPSEEK_API_KEY` на gateway. |
+| Публичный gateway с реальным DeepSeek | Phase 3.4 | Публичный деплой — только mock-провайдер (без API key, без трат). |
+| SSH-вход / one-command UX | Phase 3.5 | Не реализовано. |
+| Постоянный домен вместо `sslip.io` | Phase 3.6 | Не реализовано. |
+
+Ни одна заглушка не маскируется под рабочую функцию: протокол либо отклоняет
+запрос с явной ошибкой, либо функция задокументирована как `AWAITING`.
 
 ## Product defaults (per-session)
 
@@ -246,9 +265,9 @@ multi-turn контекст. Затем на iPhone **End Session** → след
 ```bash
 make build-linux            # bin/dsgateway-linux-amd64 / -arm64
 ./deploy/oci/deploy.sh \
-  --ip 129.146.10.25 \
-  --ssh-host 129.146.10.25 \
-  --ssh-key ~/.ssh/dsh_oracle \
+  --ip 203.0.113.42 \
+  --ssh-host 203.0.113.42 \
+  --ssh-key ~/.ssh/oracle_vm_key \
   --arch amd64
 ```
 
@@ -264,7 +283,7 @@ make build-linux            # bin/dsgateway-linux-amd64 / -arm64
 | `DS_GATEWAY_URL` | `http://localhost:8080` | базовый URL gateway для клиента и approve |
 | `DS_GATEWAY_ADDR` | `127.0.0.1:8080` | адрес прослушивания gateway (loopback) |
 | `-listen` (флаг) | `127.0.0.1:8080` | адрес прослушивания, напр. `0.0.0.0:8080` для LAN-тестов |
-| `DS_MODEL` | `deepseek-chat` | модель |
+| `DS_MODEL` | `deepseek-v4-flash` | модель gateway по умолчанию |
 | `DS_PAIR_TIMEOUT` | `120s` | время жизни pairing |
 | `DS_IDLE_TIMEOUT` | `5m` | idle-таймаут сессии |
 | `DS_GEN_TIMEOUT` | `60s` | таймаут генерации |

@@ -82,6 +82,9 @@ final class AppViewModel: ObservableObject {
 
     // MARK: - API key (Keychain only)
 
+    // STUB (Phase 3.4): the key is persisted in the Keychain for a future
+    // secure-delivery feature. It is deliberately NOT sent with the approve
+    // request today; the gateway rejects api_key with "not_implemented".
     func saveAPIKey() {
         let trimmed = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {

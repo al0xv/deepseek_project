@@ -52,6 +52,16 @@ func (g *Gateway) handleApprove(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// STUB (Phase 3.4): the wire protocol accepts api_key, but secure delivery
+	// of a session-scoped DeepSeek API key from the iOS controller to this
+	// gateway is NOT implemented yet. Reject it explicitly instead of silently
+	// ignoring it, and do not consume the pairing credential in the process.
+	if req.APIKey != "" {
+		writeError(w, http.StatusNotImplemented, protocol.ErrNotImplemented,
+			"iPhone API-key delivery is a stub (Phase 3.4): set DEEPSEEK_API_KEY on the gateway instead")
+		return
+	}
+
 	var s *session.Session
 	switch {
 	case req.PairingToken != "":
@@ -81,7 +91,6 @@ func (g *Gateway) handleApprove(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO(MVP3): if req.APIKey != "" store it in the session for the provider.
 	tok, err := g.mgr.ControlToken(s.ID)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, protocol.ErrUpstream, err.Error())

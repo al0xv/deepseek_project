@@ -3,3 +3,11 @@ bin/
 *.log
 .DS_Store
 xcuserdata/
+
+# Never commit secrets or keys, even accidentally.
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.mobileprovision

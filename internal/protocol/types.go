@@ -75,6 +75,10 @@ const (
 	ErrBadRequest      = "bad_request"
 	ErrUnauthorized    = "unauthorized"
 	ErrInvalidSettings = "invalid_settings"
+	// ErrNotImplemented marks features that exist in the wire protocol but are
+	// not implemented yet. It is returned instead of silently ignoring the
+	// request so nobody mistakes a stub for a working feature.
+	ErrNotImplemented = "not_implemented"
 )
 
 // ErrorBody is the JSON body of non-200 HTTP responses.

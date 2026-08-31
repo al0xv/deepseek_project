@@ -368,6 +368,37 @@ func TestApproveProMaxStored(t *testing.T) {
 	}
 }
 
+func TestApproveWithAPIKeyRejectedAsStub(t *testing.T) {
+	_, gc, _ := newTestGateway(t, session.Config{})
+	sess, err := gc.CreateSession()
+	if err != nil {
+		t.Fatal(err)
+	}
+	payload := `{"pairing_code":"` + protocol.NormalizePairCode(sess.PairingCode) + `","api_key":"sk-should-never-be-used"}`
+	resp, err := http.Post(gc.BaseURL+"/v1/pair", "application/json", strings.NewReader(payload))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusNotImplemented {
+		t.Fatalf("status = %d, want 501", resp.StatusCode)
+	}
+	var eb protocol.ErrorBody
+	_ = json.NewDecoder(resp.Body).Decode(&eb)
+	if eb.Code != protocol.ErrNotImplemented {
+		t.Fatalf("error code = %q, want not_implemented", eb.Code)
+	}
+	// The stub rejection must NOT consume the pairing credential.
+	st, err := gc.Status(sess.SessionID)
+	if err != nil || st != protocol.StateWaiting {
+		t.Fatalf("session after stub rejection = %q, %v (want WAITING)", st, err)
+	}
+	// A normal approve (no api_key) still works afterwards.
+	if err := gc.Approve(sess.PairingToken); err != nil {
+		t.Fatalf("approve after stub rejection failed: %v", err)
+	}
+}
+
 func TestApproveInvalidSettingsRejected(t *testing.T) {
 	_, gc, _ := newTestGateway(t, session.Config{})
 	sess, err := gc.CreateSession()

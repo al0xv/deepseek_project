@@ -81,13 +81,13 @@ make build-linux         # оба
 
 ```bash
 ./deploy/oci/deploy.sh \
-  --ip 129.146.10.25 \
-  --ssh-host 129.146.10.25 \
-  --ssh-key ~/.ssh/dsh_oracle \
+  --ip 203.0.113.42 \
+  --ssh-host 203.0.113.42 \
+  --ssh-key ~/.ssh/oracle_vm_key \
   --arch amd64
 ```
 
-Флаги: `--host` (готовый hostname, напр. `129-146-10-25.sslip.io`), `--ip`
+Флаги: `--host` (готовый hostname, напр. `203-0-113-42.sslip.io`), `--ip`
 (выводит `sslip.io` автоматически), `--ssh-host`, `--ssh-key`, `--arch`
 (`amd64|arm64`), `--user` (default `ubuntu`), `--build`.
 
@@ -101,7 +101,7 @@ make build-linux         # оба
 ### Вручную на VM (альтернатива)
 
 ```bash
-sudo bash /tmp/dsremote-deploy/install.sh /tmp/dsremote-deploy/dsgateway 129-146-10-25.sslip.io
+sudo bash /tmp/dsremote-deploy/install.sh /tmp/dsremote-deploy/dsgateway 203-0-113-42.sslip.io
 ```
 
 ---
@@ -152,7 +152,7 @@ HTTP → HTTPS redirect автоматический. Streaming (SSE) сохра
 Проверка:
 
 ```bash
-curl -sS https://129-146-10-25.sslip.io/healthz
+curl -sS https://203-0-113-42.sslip.io/healthz
 # {"status":"ok"}
 ```
 
@@ -163,18 +163,18 @@ curl -sS https://129-146-10-25.sslip.io/healthz
 Mac-клиент:
 
 ```bash
-./bin/ds --remote https://129-146-10-25.sslip.io
+./bin/ds --remote https://203-0-113-42.sslip.io
 ```
 
 или Windows:
 
 ```powershell
-.\ds.exe --remote https://129-146-10-25.sslip.io
+.\ds.exe --remote https://203-0-113-42.sslip.io
 ```
 
 Ожидание: `QR`, `Code: XXX XXX`, `Waiting for approval...`.
 
-iPhone DS Remote Gateway URL: `https://129-146-10-25.sslip.io`
+iPhone DS Remote Gateway URL: `https://203-0-113-42.sslip.io`
 → `Scan QR` → `Face ID` → `Approve`.
 
 Терминал: `✓ Approved`, `DeepSeek V4 Flash · Thinking High`,

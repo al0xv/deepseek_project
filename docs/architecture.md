@@ -1,6 +1,7 @@
 # Architecture
 
-Реализованный статус: **MVP0–MVP2**. MVP3 (iOS) описан как будущий этап.
+Реализованный статус: **MVP0–MVP2, Phase 2.4, Phase 3.1–3.2.1, Phase 3.3A**
+(подготовка публичного деплоя). Фазы 3.3B–3.6 — будущие; см. `roadmap.md`.
 
 ## Executive decisions
 
@@ -52,8 +53,9 @@ core.
   disconnect → destroy; e2e.
 - **MVP2**: pairing (WAITING→APPROVED), QR + code, `dsgateway approve`,
   полный state machine.
-- **MVP3** (будущее): iPhone (Keychain, scan QR, Face ID, approve/end),
-  TLS на gateway, доставка key с iPhone в RAM gateway при approve.
+- **MVP3** (реализован, Phase 3.1–3.2): iPhone (Keychain, scan QR, Face ID,
+  approve/end), `control_token` для End Session, per-session model & thinking.
+  TLS на gateway и доставка key с iPhone в RAM gateway — **Phase 3.4** (stub).
 
 ## Ключевые ограничения (по требованиям)
 

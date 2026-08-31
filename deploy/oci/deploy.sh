@@ -4,9 +4,9 @@
 #
 # Example:
 #   ./deploy/oci/deploy.sh \
-#     --ip 129.146.10.25 \
-#     --ssh-host 129.146.10.25 \
-#     --ssh-key ~/.ssh/dsh_oracle \
+#     --ip 203.0.113.42 \
+#     --ssh-host 203.0.113.42 \
+#     --ssh-key ~/.ssh/oracle_vm_key \
 #     --arch amd64
 set -euo pipefail
 
@@ -22,7 +22,7 @@ Required:
 
 Options:
   --ip <ipv4>         OCI public IPv4; used to derive the sslip.io hostname
-  --host <hostname>   public HTTPS hostname (overrides --ip), e.g. 129-146-10-25.sslip.io
+  --host <hostname>   public HTTPS hostname (overrides --ip), e.g. 203-0-113-42.sslip.io
   --arch <amd64|arm64> VM architecture (default: amd64)
   --user <user>       SSH user (default: ubuntu)
   --build             force rebuild of the Linux binary
